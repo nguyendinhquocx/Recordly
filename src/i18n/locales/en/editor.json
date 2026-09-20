@@ -4,7 +4,8 @@
 		"pause": "Pause",
 		"skipBack": "Skip Back",
 		"skipForward": "Skip Forward",
-		"muteUnmute": "Mute/Unmute"
+		"muteUnmute": "Mute/Unmute",
+		"volume": "Preview volume"
 	},
 	"annotations": {
 		"settings": "Annotation Settings",
@@ -111,8 +112,18 @@
 		"showInFolder": "Show In Folder"
 	},
 	"project": {
-		"untitled": "Untitled"
+		"untitled": "Untitled",
+		"unsavedChangesTitle": "Unsaved changes",
+		"unsavedChangesDescription": "Save your current project before you {{action}}?",
+		"discardChanges": "Discard changes",
+		"saveProject": "Save project"
 	},
+	"exportTips": {
+		"autoZooms": "Tip: Turn off auto-applied zooms in settings",
+		"experimentalBuilds": "Tip: Try experimental builds by turning on access in settings",
+		"cursorAppearance": "Tip: You can customise your cursor appearance"
+	},
+	"account": { "title": "Account", "comingSoon": "Account coming soon" },
 	"nativeCaptureUnavailable": {
 		"title": "Nothing’s broken, but we won’t be able to render an animated cursor overlay.",
 		"description": "Your device does not support native capture. This could be for a variety of reasons we haven’t figured out yet. This doesn’t break Recordly, but it does make cursor smoothing impossible.",

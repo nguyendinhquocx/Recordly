@@ -69,7 +69,9 @@ export function buildResolvedAudioPlan(input: {
 	if (!hasDedicatedTracks && pathsByTrack.mixed) playbackPaths.push(pathsByTrack.mixed);
 
 	const includeEmbeddedInExport = !pathsByTrack.system && !pathsByTrack.mixed;
-	const resolvedRegions = (input.audioRegions ?? []).slice().sort((a, b) => a.startMs - b.startMs);
+	const resolvedRegions = (input.audioRegions ?? [])
+		.slice()
+		.sort((a, b) => a.startMs - b.startMs);
 	const tracks: ResolvedAudioTrack[] = resolvedRegions.map((region) => ({
 		id: `user:${region.id}`,
 		kind: "user",

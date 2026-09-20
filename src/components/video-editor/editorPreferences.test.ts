@@ -12,6 +12,29 @@ import {
 } from "./editorPreferences";
 import { DEFAULT_AUTO_CAPTION_SETTINGS, DEFAULT_CROP_REGION } from "./types";
 
+describe("border radius preferences", () => {
+	it("migrates legacy pixels once and marks the stored unit", () => {
+		expect(normalizeEditorPreferences({ borderRadius: 54 })).toMatchObject({
+			borderRadius: 5,
+			borderRadiusUnit: "percent",
+		});
+		expect(
+			normalizeEditorPreferences({ borderRadius: 8, borderRadiusUnit: "percent" }),
+		).toMatchObject({ borderRadius: 8, borderRadiusUnit: "percent" });
+	});
+
+	it("only replaces a legacy zero radius on macOS", () => {
+		try {
+			vi.stubGlobal("navigator", { platform: "Win32" });
+			expect(normalizeEditorPreferences({ borderRadius: 0 }).borderRadius).toBe(0);
+			vi.stubGlobal("navigator", { platform: "MacIntel" });
+			expect(normalizeEditorPreferences({ borderRadius: 0 }).borderRadius).toBe(8);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+});
+
 function createStorageMock(initialValues: Record<string, string> = {}): Storage {
 	const store = new Map(Object.entries(initialValues));
 
@@ -95,6 +118,12 @@ describe("editorPreferences", () => {
 
 	it("defaults MP4 exports to the Lightning pipeline", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.exportPipelineModel).toBe("modern");
+	});
+
+	it("migrates hidden legacy pipeline preferences to Lightning", () => {
+		expect(normalizeEditorPreferences({ exportPipelineModel: "legacy" })).toMatchObject({
+			exportPipelineModel: "modern",
+		});
 	});
 
 	it("bakes in the stronger split motion blur defaults", () => {
@@ -266,7 +295,6 @@ describe("editorPreferences", () => {
 			cursorSway: 1.5,
 			borderRadius: 18,
 			padding: { top: 30, right: 30, bottom: 30, left: 30, linked: true },
-			frame: DEFAULT_EDITOR_PREFERENCES.frame,
 			aspectRatio: "4:5",
 			exportEncodingMode: "quality",
 			exportBackendPreference: DEFAULT_EDITOR_PREFERENCES.exportBackendPreference,

@@ -54,7 +54,9 @@ export function MicDeviceRow({
 			className={`${styles.ddItem} ${selected ? styles.ddItemSelected : ""}`}
 			onClick={onSelect}
 		>
-			<span className="shrink-0">{selected ? <MicrophoneIcon size={16} /> : <MicrophoneSlashIcon size={16} />}</span>
+			<span className="shrink-0">
+				{selected ? <MicrophoneIcon size={16} /> : <MicrophoneSlashIcon size={16} />}
+			</span>
 			<span className="truncate flex-1">{device.label}</span>
 			<AudioLevelMeter level={level} className="w-16 shrink-0" />
 		</button>

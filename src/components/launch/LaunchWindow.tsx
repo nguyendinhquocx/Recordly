@@ -19,6 +19,7 @@ import { useScopedT } from "../../contexts/I18nContext";
 import { useMicrophoneDevices } from "../../hooks/useMicrophoneDevices";
 import { useScreenRecorder } from "../../hooks/useScreenRecorder";
 import { useVideoDevices } from "../../hooks/useVideoDevices";
+import { supportsHudCaptureProtection } from "../../lib/hudCaptureProtection";
 import { Button } from "../ui/button";
 import { HudInteractionContext } from "./contexts/HudInteractionContext";
 import { canToggleFloatingWebcamPreview } from "./floatingWebcamPreview";
@@ -29,6 +30,7 @@ import { useLaunchWindowSystemState } from "./hooks/useLaunchWindowSystemState";
 import { useRecordingTimer } from "./hooks/useRecordingTimer";
 import { useWebcamPreviewOverlay } from "./hooks/useWebcamPreviewOverlay";
 import styles from "./LaunchWindow.module.css";
+import { MarqueeText } from "./MarqueeText";
 import { CountdownPopover } from "./popovers/CountdownPopover";
 import {
 	LaunchPopoverCoordinatorProvider,
@@ -40,7 +42,6 @@ import { ProjectPopover } from "./popovers/ProjectPopover";
 import { SourcePopover } from "./popovers/SourcePopover";
 import { WebcamPopover } from "./popovers/WebcamPopover";
 import { RecordingControls } from "./RecordingControls";
-import { MarqueeText } from "./SourceSelector";
 
 const SHOW_DEV_UPDATE_PREVIEW = import.meta.env.DEV;
 
@@ -115,7 +116,7 @@ function LaunchWindowContent() {
 		toggleHudCaptureProtection,
 	} = useLaunchWindowSystemState(preparePermissions);
 
-	const supportsHudCaptureProtection = platform !== "linux";
+	const hudCaptureProtectionSupported = supportsHudCaptureProtection(platform ?? "");
 
 	useEffect(() => {
 		if (!selectedDeviceId) {
@@ -372,7 +373,7 @@ function LaunchWindowContent() {
 			</div>
 
 			<MorePopover
-				supportsHudCaptureProtection={supportsHudCaptureProtection}
+				supportsHudCaptureProtection={hudCaptureProtectionSupported}
 				hideHudFromCapture={hideHudFromCapture}
 				onToggleHudCaptureProtection={() => {
 					void toggleHudCaptureProtection();
@@ -438,6 +439,7 @@ function LaunchWindowContent() {
 	const hudMode = finalizing ? "finalizing" : recording ? "recording" : "idle";
 	const useNativeHudBarDrag =
 		platform === "linux" || hudOverlayMousePassthroughSupported === false;
+	const shouldAnimateHudLayout = !recording && !showRecordingWebcamPreview && !isHudDragging;
 
 	return (
 		<HudInteractionContext.Provider
@@ -451,11 +453,7 @@ function LaunchWindowContent() {
 					ref={hudContentRef}
 					className="flex items-center overflow-visible flex-col-reverse pointer-events-none"
 				>
-					<div
-						className="flex flex-col items-center pointer-events-auto p-2"
-						onMouseEnter={handleHudMouseEnter}
-						onMouseLeave={handleHudMouseLeave}
-					>
+					<div className="flex flex-col items-center pointer-events-none p-2">
 						<div
 							ref={hudBarTransformRef}
 							style={{
@@ -464,9 +462,11 @@ function LaunchWindowContent() {
 						>
 							<motion.div
 								ref={hudBarRef}
-								layout={!showRecordingWebcamPreview && !isHudDragging}
+								layout={shouldAnimateHudLayout}
 								transition={hudStateTransition}
-								className={`${styles.bar} launch-theme mb-2`}
+								className={`${styles.bar} launch-theme mb-2 pointer-events-auto`}
+								onMouseEnter={handleHudMouseEnter}
+								onMouseLeave={handleHudMouseLeave}
 							>
 								<div
 									// Linux compositors and non-passthrough Windows fallback windows
@@ -487,7 +487,7 @@ function LaunchWindowContent() {
 									<AnimatePresence initial={false} mode="wait">
 										<motion.div
 											key={hudMode}
-											layout={!showRecordingWebcamPreview && !isHudDragging}
+											layout={shouldAnimateHudLayout}
 											className={styles.barState}
 											initial={{
 												opacity: 0,

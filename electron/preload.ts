@@ -102,6 +102,26 @@ type NativeExportCapabilities = {
 		userOptInRequired: boolean;
 	};
 };
+type ExportHardwareInfo = {
+	platform: NodeJS.Platform;
+	release: string;
+	arch: string;
+	cpuModel: string | null;
+	logicalProcessors: number;
+	totalMemoryGb: number;
+	machineModel: string | null;
+	gpus: Array<{
+		name: string;
+		vendor: string | null;
+		active: boolean | null;
+	}>;
+	gpuFeatures: {
+		videoDecode: string | null;
+		videoEncode: string | null;
+		webgl: string | null;
+		webgpu: string | null;
+	};
+};
 
 const nativeVideoExportWriteRequests = new Map<
 	number,
@@ -217,6 +237,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		return ipcRenderer.invoke("get-native-export-capabilities") as Promise<{
 			success: boolean;
 			capabilities?: NativeExportCapabilities;
+			error?: string;
+		}>;
+	},
+	getExportHardwareInfo: () => {
+		return ipcRenderer.invoke("get-export-hardware-info") as Promise<{
+			success: boolean;
+			hardware?: ExportHardwareInfo;
 			error?: string;
 		}>;
 	},
@@ -835,6 +862,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getUpdateStatusSummary: () => {
 		return ipcRenderer.invoke("get-update-status-summary");
 	},
+	getExperimentalUpdatesEnabled: () => {
+		return ipcRenderer.invoke("get-experimental-updates-enabled");
+	},
+	setExperimentalUpdatesEnabled: (enabled: boolean) => {
+		return ipcRenderer.invoke("set-experimental-updates-enabled", enabled);
+	},
 	previewUpdateToast: () => {
 		return ipcRenderer.invoke("preview-update-toast");
 	},
@@ -966,12 +999,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.invoke("mux-native-windows-recording", expectedDurationMs),
 	hideOsCursor: () => ipcRenderer.invoke("hide-cursor"),
 	getAppVersion: () => ipcRenderer.invoke("app:getVersion"),
+	getAnnouncements: () => ipcRenderer.invoke("announcements:get"),
 	getRecordingPreferences: () => ipcRenderer.invoke("get-recording-preferences"),
 	getRecordingAudioLabConfig: () => ipcRenderer.invoke("get-recording-audio-lab-config"),
 	setRecordingPreferences: (prefs: {
 		microphoneEnabled?: boolean;
 		microphoneDeviceId?: string;
 		systemAudioEnabled?: boolean;
+		webcamEnabled?: boolean;
+		webcamDeviceId?: string;
 	}) => ipcRenderer.invoke("set-recording-preferences", prefs),
 	getCountdownDelay: () => ipcRenderer.invoke("get-countdown-delay"),
 	setCountdownDelay: (delay: number) => ipcRenderer.invoke("set-countdown-delay", delay),
@@ -983,35 +1019,4 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("countdown-tick", listener);
 		return () => ipcRenderer.removeListener("countdown-tick", listener);
 	},
-
-	// ── Extensions ──────────────────────────────────────────────────────
-	extensionsDiscover: () => ipcRenderer.invoke("extensions:discover"),
-	extensionsList: () => ipcRenderer.invoke("extensions:list"),
-	extensionsGet: (id: string) => ipcRenderer.invoke("extensions:get", id),
-	extensionsEnable: (id: string) => ipcRenderer.invoke("extensions:enable", id),
-	extensionsDisable: (id: string) => ipcRenderer.invoke("extensions:disable", id),
-	extensionsInstallFromFolder: () => ipcRenderer.invoke("extensions:install-from-folder"),
-	extensionsUninstall: (id: string) => ipcRenderer.invoke("extensions:uninstall", id),
-	extensionsGetDirectory: () => ipcRenderer.invoke("extensions:get-directory"),
-	extensionsOpenDirectory: () => ipcRenderer.invoke("extensions:open-directory"),
-
-	// ── Extensions — Marketplace ────────────────────────────────────────
-	extensionsMarketplaceSearch: (params: {
-		query?: string;
-		tags?: string[];
-		sort?: string;
-		page?: number;
-		pageSize?: number;
-	}) => ipcRenderer.invoke("extensions:marketplace-search", params),
-	extensionsMarketplaceGet: (id: string) => ipcRenderer.invoke("extensions:marketplace-get", id),
-	extensionsMarketplaceInstall: (extensionId: string, downloadUrl: string) =>
-		ipcRenderer.invoke("extensions:marketplace-install", extensionId, downloadUrl),
-	extensionsMarketplaceSubmit: (extensionId: string) =>
-		ipcRenderer.invoke("extensions:marketplace-submit", extensionId),
-
-	// ── Extensions — Admin Review ───────────────────────────────────────
-	extensionsReviewsList: (params: { status?: string; page?: number; pageSize?: number }) =>
-		ipcRenderer.invoke("extensions:reviews-list", params),
-	extensionsReviewUpdate: (reviewId: string, status: string, notes?: string) =>
-		ipcRenderer.invoke("extensions:review-update", reviewId, status, notes),
 });

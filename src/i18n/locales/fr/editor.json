@@ -4,7 +4,8 @@
 		"pause": "Pause",
 		"skipBack": "Reculer",
 		"skipForward": "Avancer",
-		"muteUnmute": "Activer/Désactiver le son"
+		"muteUnmute": "Activer/Désactiver le son",
+		"volume": "Volume de l’aperçu"
 	},
 	"annotations": {
 		"settings": "Paramètres des annotations",
@@ -111,8 +112,18 @@
 		"showInFolder": "Afficher dans le dossier"
 	},
 	"project": {
-		"untitled": "Sans titre"
+		"untitled": "Sans titre",
+		"unsavedChangesTitle": "Modifications non enregistrées",
+		"unsavedChangesDescription": "Enregistrer le projet actuel avant de {{action}} ?",
+		"discardChanges": "Ignorer les modifications",
+		"saveProject": "Enregistrer le projet"
 	},
+	"exportTips": {
+		"autoZooms": "Astuce : Désactivez les zooms automatiques dans les paramètres",
+		"experimentalBuilds": "Astuce : Activez l’accès aux versions expérimentales dans les paramètres",
+		"cursorAppearance": "Astuce : Vous pouvez personnaliser l’apparence du curseur"
+	},
+	"account": { "title": "Compte", "comingSoon": "Compte bientôt disponible" },
 	"nativeCaptureUnavailable": {
 		"title": "Rien n'est cassé, mais nous ne pourrons pas afficher une superposition animée du curseur.",
 		"description": "Votre appareil ne prend pas en charge la capture native. Cela peut arriver pour plusieurs raisons que nous n'avons pas encore identifiées. Recordly continuera de fonctionner, mais le lissage du curseur sera impossible.",

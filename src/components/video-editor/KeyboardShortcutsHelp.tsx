@@ -15,10 +15,9 @@ export function KeyboardShortcutsHelp() {
 	});
 
 	useEffect(() => {
-		Promise.all([
-			formatShortcut(["shift", "Scroll"]),
-			formatShortcut(["mod", "Scroll"]),
-		]).then(([pan, zoom]) => setScrollLabels({ pan, zoom }));
+		Promise.all([formatShortcut(["shift", "Scroll"]), formatShortcut(["mod", "Scroll"])]).then(
+			([pan, zoom]) => setScrollLabels({ pan, zoom }),
+		);
 	}, []);
 
 	return (

@@ -1,5 +1,7 @@
 import { clampMediaTimeToDuration } from "@/lib/mediaTiming";
 
+const HAVE_CURRENT_DATA_READY_STATE = 2;
+
 /**
  * Maps the editor timeline time to the corresponding webcam media timestamp,
  * accounting for any recorded webcam start offset and media duration clamps.
@@ -19,6 +21,26 @@ export function getWebcamMediaTargetTimeSeconds({
 }
 
 export const getWebcamPreviewTargetTimeSeconds = getWebcamMediaTargetTimeSeconds;
+
+export function isWebcamMediaSynchronized({
+	currentTime,
+	targetTime,
+	readyState,
+	isSeeking,
+	toleranceSeconds = 0.12,
+}: {
+	currentTime: number;
+	targetTime: number;
+	readyState: number;
+	isSeeking: boolean;
+	toleranceSeconds?: number;
+}): boolean {
+	return (
+		readyState >= HAVE_CURRENT_DATA_READY_STATE &&
+		!isSeeking &&
+		Math.abs(currentTime - targetTime) <= toleranceSeconds
+	);
+}
 
 /**
  * Decides whether the webcam media element needs a corrective seek for the

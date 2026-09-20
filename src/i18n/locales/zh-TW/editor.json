@@ -4,7 +4,8 @@
 		"pause": "暫停",
 		"skipBack": "後退",
 		"skipForward": "前進",
-		"muteUnmute": "靜音/取消靜音"
+		"muteUnmute": "靜音/取消靜音",
+		"volume": "預覽音量"
 	},
 	"annotations": {
 		"settings": "註釋設定",
@@ -111,8 +112,18 @@
 		"showInFolder": "在資料夾中顯示"
 	},
 	"project": {
-		"untitled": "未命名"
+		"untitled": "未命名",
+		"unsavedChangesTitle": "未儲存的變更",
+		"unsavedChangesDescription": "要在{{action}}之前儲存目前的專案嗎？",
+		"discardChanges": "捨棄變更",
+		"saveProject": "儲存專案"
 	},
+	"exportTips": {
+		"autoZooms": "提示：可在設定中關閉自動套用的縮放",
+		"experimentalBuilds": "提示：可在設定中開啟實驗版本存取權",
+		"cursorAppearance": "提示：你可以自訂游標外觀"
+	},
+	"account": { "title": "帳號", "comingSoon": "帳號功能即將推出" },
 	"nativeCaptureUnavailable": {
 		"title": "沒有出錯，但我們無法轉譯動畫游標覆蓋層。",
 		"description": "你的裝置不支援原生擷取。這可能是由我們尚未釐清的多種原因造成的。Recordly 仍可繼續運作，但無法進行游標平滑處理。",

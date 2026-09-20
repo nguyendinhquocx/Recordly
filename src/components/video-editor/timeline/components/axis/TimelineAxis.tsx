@@ -55,7 +55,9 @@ export default function TimelineAxis({ videoDurationMs, currentTimeMs }: Timelin
 	return (
 		<div
 			className="h-8 bg-editor-bg border-b border-foreground/10 relative overflow-hidden select-none"
-			style={{ [sideProperty === "right" ? "marginRight" : "marginLeft"]: `${sidebarWidth}px` }}
+			style={{
+				[sideProperty === "right" ? "marginRight" : "marginLeft"]: `${sidebarWidth}px`,
+			}}
 		>
 			{markers.minorTicks.map((time) => {
 				const offset = valueToPixels(time - range.start);

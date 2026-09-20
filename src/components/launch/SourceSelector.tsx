@@ -1,19 +1,20 @@
+import { AppWindowIcon, CaretUpIcon, MonitorIcon } from "@phosphor-icons/react";
 import * as React from "react";
-import { MonitorIcon, AppWindowIcon, CaretUpIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useScopedT } from "@/contexts/I18nContext";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useScopedT } from "@/contexts/I18nContext";
 import { cn } from "@/lib/utils";
 import {
-	mapRawSource,
+	type DesktopSource,
 	isScreenSource,
 	isWindowSource,
-	type DesktopSource,
+	mapRawSource,
 } from "./popovers/launchPopoverTypes";
 import "./launchTheme.css";
 import "./SourceSelector.css";
 import { useHudInteraction } from "./contexts/HudInteractionContext";
+import { MarqueeText } from "./MarqueeText";
 
 interface SourceSelectorProps {
 	/** List of available screen sources */
@@ -36,42 +37,6 @@ interface SourceSelectorProps {
 	children?: React.ReactNode;
 }
 
-export function MarqueeText({ text }: { text: string }) {
-	const staticRef = useRef<HTMLSpanElement>(null);
-	const [overflowing, setOverflowing] = useState(false);
-
-	useLayoutEffect(() => {
-		const node = staticRef.current;
-		if (!node) return;
-		const checkOverflow = () => {
-			setOverflowing(node.scrollWidth > node.clientWidth + 1);
-		};
-		checkOverflow();
-		const observer = new ResizeObserver(checkOverflow);
-		observer.observe(node);
-		return () => observer.disconnect();
-	}, [text]);
-
-	return (
-		<div
-			className="w-full source-selector-marquee"
-			data-overflowing={overflowing ? "true" : "false"}
-		>
-			<span ref={staticRef} className="source-selector-marquee-static">
-				{text}
-			</span>
-			<span className="source-selector-marquee-animated">
-				<span className="source-selector-marquee-track">
-					<span className="source-selector-marquee-segment">{text}</span>
-					<span className="source-selector-marquee-segment source-selector-marquee-duplicate">
-						{text}
-					</span>
-				</span>
-			</span>
-		</div>
-	);
-}
-
 /**
  * SourceSelectorContent - The actual list of sources
  */
@@ -81,7 +46,10 @@ export const SourceSelectorContent = ({
 	selectedSource = "Screen",
 	loading = false,
 	onSourceSelect = () => undefined,
-}: Pick<SourceSelectorProps, "screenSources" | "windowSources" | "selectedSource" | "loading" | "onSourceSelect">) => {
+}: Pick<
+	SourceSelectorProps,
+	"screenSources" | "windowSources" | "selectedSource" | "loading" | "onSourceSelect"
+>) => {
 	const t = useScopedT("launch");
 	const renderSourceItem = (source: DesktopSource, index: number) => {
 		const isSelected = selectedSource === source.name;
@@ -116,12 +84,14 @@ export const SourceSelectorContent = ({
 					)}
 				</div>
 
-					<div className="flex-1 min-w-0 flex flex-col items-start text-left">
+				<div className="flex-1 min-w-0 flex flex-col items-start text-left">
 					<div className="text-sm font-medium source-selector-text w-full">
 						<MarqueeText text={source.windowTitle || source.name} />
 					</div>
 					<div className="text-xs source-selector-subtle truncate w-full text-left">
-						{source.sourceType === "screen" ? t("recording.screen") : t("recording.window")}
+						{source.sourceType === "screen"
+							? t("recording.screen")
+							: t("recording.window")}
 					</div>
 				</div>
 			</button>
@@ -156,7 +126,9 @@ export const SourceSelectorContent = ({
 								</span>
 							</div>
 							<div className="space-y-0.5">
-								{screenSources.map((source, index) => renderSourceItem(source, index))}
+								{screenSources.map((source, index) =>
+									renderSourceItem(source, index),
+								)}
 							</div>
 						</div>
 					) : null}
@@ -166,7 +138,9 @@ export const SourceSelectorContent = ({
 								{t("recording.windows")}
 							</div>
 							<div className="space-y-0.5">
-								{windowSources.map((source, index) => renderSourceItem(source, index))}
+								{windowSources.map((source, index) =>
+									renderSourceItem(source, index),
+								)}
 							</div>
 						</div>
 					) : null}
@@ -240,6 +214,7 @@ export const SourceSelector = React.memo(function SourceSelector({
 				const result = await window.electronAPI.selectSource(source);
 				if (result) {
 					setInternalSelectedSource(source.name);
+					await window.electronAPI.showSourceHighlight?.(source);
 				}
 			} catch (error) {
 				console.error("Failed to select source:", error);

@@ -7,8 +7,11 @@ import { app } from "electron";
 import { getFfmpegBinaryPath } from "../ffmpeg/binary";
 import { getBundledWhisperExecutableCandidates } from "../paths/binaries";
 import { resolveRecordingSession } from "../project/session";
+import { getUsableCompanionAudioCandidates } from "../recording/diagnostics";
 import { normalizeVideoSourcePath } from "../utils";
+import { getCaptionCompanionAudioCandidates } from "./audioCandidates";
 import { parseSrtCues, parseWhisperJsonCues, shouldRetryWhisperWithoutJson } from "./parser";
+import { isMissingWindowsWhisperRuntimeDependency } from "./runtimeErrors";
 import { segmentCuesIntoPhrases } from "./segment";
 import {
 	parseSilenceIntervals,
@@ -18,6 +21,22 @@ import {
 } from "./silence";
 
 const execFileAsync = promisify(execFile);
+
+async function executeWhisper(whisperExecutablePath: string, args: string[]) {
+	try {
+		await execFileAsync(whisperExecutablePath, args, {
+			timeout: 30 * 60 * 1000,
+			maxBuffer: 20 * 1024 * 1024,
+		});
+	} catch (error) {
+		if (isMissingWindowsWhisperRuntimeDependency(error)) {
+			throw new Error(
+				"Whisper could not start because the Microsoft Visual C++ x64 Redistributable is missing. Install it from https://aka.ms/vc14/vc_redist.x64.exe, then restart Recordly.",
+			);
+		}
+		throw error;
+	}
+}
 
 export async function ensureReadableFile(filePath: string, options?: { executable?: boolean }) {
 	await fs.access(filePath, fsConstants.R_OK);
@@ -78,7 +97,8 @@ export async function resolveWhisperExecutablePath(preferredPath?: string | null
 	}
 
 	throw new Error(
-		"No Whisper runtime was found. Recordly looked for a bundled binary first, then checked common system install locations.",
+		`No Whisper runtime was found for ${process.platform}/${process.arch}. ` +
+			"This Recordly build is missing its bundled caption runtime. Reinstall or update Recordly, or select a whisper-cli executable in Caption settings.",
 	);
 }
 
@@ -97,6 +117,10 @@ export async function resolveCaptionAudioCandidates(videoPath: string) {
 	};
 
 	pushCandidate(videoPath, "recording");
+	const companionAudio = await getUsableCompanionAudioCandidates(videoPath);
+	for (const candidate of getCaptionCompanionAudioCandidates(companionAudio)) {
+		pushCandidate(candidate.path, candidate.label);
+	}
 
 	const requestedRecordingSession = await resolveRecordingSession(videoPath);
 	pushCandidate(requestedRecordingSession?.webcamPath, "linked webcam recording");
@@ -236,10 +260,7 @@ export async function generateAutoCaptionsFromVideo(options: {
 
 		let jsonEnabled = true;
 		try {
-			await execFileAsync(whisperExecutablePath, [...whisperBaseArgs, "-ojf"], {
-				timeout: 30 * 60 * 1000,
-				maxBuffer: 20 * 1024 * 1024,
-			});
+			await executeWhisper(whisperExecutablePath, [...whisperBaseArgs, "-ojf"]);
 		} catch (error) {
 			if (!shouldRetryWhisperWithoutJson(error)) {
 				throw error;
@@ -250,10 +271,7 @@ export async function generateAutoCaptionsFromVideo(options: {
 				"[auto-captions] Whisper runtime does not support JSON full output, retrying with SRT only:",
 				error,
 			);
-			await execFileAsync(whisperExecutablePath, whisperBaseArgs, {
-				timeout: 30 * 60 * 1000,
-				maxBuffer: 20 * 1024 * 1024,
-			});
+			await executeWhisper(whisperExecutablePath, whisperBaseArgs);
 		}
 
 		const timedCues = jsonEnabled

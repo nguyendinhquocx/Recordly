@@ -4,7 +4,8 @@
 		"pause": "Pausar",
 		"skipBack": "Voltar",
 		"skipForward": "Avançar",
-		"muteUnmute": "Silenciar/ativar som"
+		"muteUnmute": "Silenciar/ativar som",
+		"volume": "Volume da prévia"
 	},
 	"annotations": {
 		"settings": "Configurações de anotação",
@@ -111,8 +112,18 @@
 		"showInFolder": "Mostrar na pasta"
 	},
 	"project": {
-		"untitled": "Sem título"
+		"untitled": "Sem título",
+		"unsavedChangesTitle": "Alterações não salvas",
+		"unsavedChangesDescription": "Salvar o projeto atual antes de {{action}}?",
+		"discardChanges": "Descartar alterações",
+		"saveProject": "Salvar projeto"
 	},
+	"exportTips": {
+		"autoZooms": "Dica: Desative os zooms aplicados automaticamente nas configurações",
+		"experimentalBuilds": "Dica: Ative o acesso a versões experimentais nas configurações",
+		"cursorAppearance": "Dica: Você pode personalizar a aparência do cursor"
+	},
+	"account": { "title": "Conta", "comingSoon": "Conta em breve" },
 	"nativeCaptureUnavailable": {
 		"title": "Nada está quebrado, mas não poderemos renderizar uma sobreposição animada do cursor.",
 		"description": "Seu dispositivo não oferece suporte à captura nativa. Isso pode acontecer por vários motivos que ainda não identificamos. O Recordly continuará funcionando, mas a suavização do cursor ficará indisponível.",

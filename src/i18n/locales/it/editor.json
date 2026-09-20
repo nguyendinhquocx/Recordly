@@ -4,7 +4,8 @@
 		"pause": "Pausa",
 		"skipBack": "Indietro",
 		"skipForward": "Avanti",
-		"muteUnmute": "Disattiva/Attiva audio"
+		"muteUnmute": "Disattiva/Attiva audio",
+		"volume": "Volume anteprima"
 	},
 	"annotations": {
 		"settings": "Impostazioni annotazione",
@@ -111,8 +112,18 @@
 		"showInFolder": "Mostra nella cartella"
 	},
 	"project": {
-		"untitled": "Senza titolo"
+		"untitled": "Senza titolo",
+		"unsavedChangesTitle": "Modifiche non salvate",
+		"unsavedChangesDescription": "Salvare il progetto corrente prima di {{action}}?",
+		"discardChanges": "Ignora modifiche",
+		"saveProject": "Salva progetto"
 	},
+	"exportTips": {
+		"autoZooms": "Suggerimento: Disattiva gli zoom applicati automaticamente nelle impostazioni",
+		"experimentalBuilds": "Suggerimento: Attiva l’accesso alle build sperimentali nelle impostazioni",
+		"cursorAppearance": "Suggerimento: Puoi personalizzare l’aspetto del cursore"
+	},
+	"account": { "title": "Account", "comingSoon": "Account in arrivo" },
 	"nativeCaptureUnavailable": {
 		"title": "Niente è rotto, ma non sarà possibile renderizzare un overlay del cursore animato.",
 		"description": "Il tuo dispositivo non supporta la cattura nativa. Le cause possono essere varie e non ancora identificate. Recordly funziona comunque, ma non è possibile applicare lo smoothing del cursore.",

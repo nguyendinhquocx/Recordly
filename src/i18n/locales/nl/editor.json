@@ -4,7 +4,8 @@
 		"pause": "Pauzeren",
 		"skipBack": "Terug springen",
 		"skipForward": "Vooruit springen",
-		"muteUnmute": "Dempen/dempen opheffen"
+		"muteUnmute": "Dempen/dempen opheffen",
+		"volume": "Voorbeeldvolume"
 	},
 	"annotations": {
 		"settings": "Annotatie-instellingen",
@@ -112,8 +113,18 @@
 		"showInFolder": "Tonen in map"
 	},
 	"project": {
-		"untitled": "Naamloos"
+		"untitled": "Naamloos",
+		"unsavedChangesTitle": "Niet-opgeslagen wijzigingen",
+		"unsavedChangesDescription": "Wil je het huidige project opslaan voordat je {{action}}?",
+		"discardChanges": "Wijzigingen negeren",
+		"saveProject": "Project opslaan"
 	},
+	"exportTips": {
+		"autoZooms": "Tip: Schakel automatisch toegepaste zooms uit in de instellingen",
+		"experimentalBuilds": "Tip: Schakel toegang tot experimentele builds in via de instellingen",
+		"cursorAppearance": "Tip: Je kunt het uiterlijk van je cursor aanpassen"
+	},
+	"account": { "title": "Account", "comingSoon": "Account binnenkort beschikbaar" },
 	"nativeCaptureUnavailable": {
 		"title": "Er is niets kapot, maar we kunnen geen geanimeerde cursor-overlay renderen.",
 		"description": "Je apparaat ondersteunt geen native capture. Dit kan verschillende oorzaken hebben die we nog niet hebben achterhaald. Recordly blijft werken, maar cursor smoothing is dan niet mogelijk.",
