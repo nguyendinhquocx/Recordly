@@ -98,6 +98,7 @@ export function useInitialEditorSource({
 						appearance.autoApplyFreshRecordingAutoZooms ? sourceUrl : null;
 					appearance.setWebcam((previous) => ({
 						...previous,
+						visibleRanges: undefined,
 						enabled: Boolean(webcamPath),
 						sourcePath: webcamPath,
 						timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
@@ -133,6 +134,7 @@ export function useInitialEditorSource({
 					pendingFreshRecordingAutoZoomPathRef.current = null;
 					appearance.setWebcam((previous) => ({
 						...previous,
+						visibleRanges: undefined,
 						enabled: Boolean(webcamPath),
 						sourcePath: webcamPath,
 						timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
@@ -168,6 +170,7 @@ export function useInitialEditorSource({
 					applySessionPresentation(sessionResult.session);
 					appearance.setWebcam((previous) => ({
 						...previous,
+						visibleRanges: undefined,
 						enabled: Boolean(sessionResult.session?.webcamPath),
 						sourcePath: sessionResult.session?.webcamPath ?? null,
 						timeOffsetMs:
@@ -191,6 +194,7 @@ export function useInitialEditorSource({
 				applySessionPresentation(null);
 				appearance.setWebcam((previous) => ({
 					...previous,
+					visibleRanges: undefined,
 					enabled: false,
 					sourcePath: null,
 					timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
@@ -218,6 +222,7 @@ export function useInitialEditorSource({
 			if (!session || sessionSourcePath !== videoSourcePath) return;
 			appearance.setWebcam((previous) => ({
 				...previous,
+				visibleRanges: undefined,
 				enabled: Boolean(webcamPath),
 				sourcePath: webcamPath,
 				timeOffsetMs: webcamPath

@@ -1,3 +1,4 @@
+import { getLocalMediaServerPath } from "@/lib/localMediaUrl";
 import type { SourceAudioTrackSettings } from "@/components/video-editor/audio/audioTypes";
 import type {
 	ExportBackendPreference,
@@ -12,6 +13,7 @@ import type {
 import { isValidMp4FrameRate } from "@/lib/exporter/types";
 import { DEFAULT_WALLPAPER_PATH } from "@/lib/wallpapers";
 import { ASPECT_RATIOS, type AspectRatio, isCustomAspectRatio } from "@/utils/aspectRatioUtils";
+import { closeClipGaps, rippleRegionAnchors, rippleRegions } from "./clipSequence";
 import { CURSOR_MOTION_PRESETS, resolveCursorMotionPresetId } from "./cursorMotionPresets";
 import {
 	ADVANCED_VERTICAL_PADDING_MAX,
@@ -268,6 +270,8 @@ export function toFileUrl(filePath: string): string {
 
 export function fromFileUrl(fileUrl: string): string {
 	const value = fileUrl.trim();
+	const serverPath = getLocalMediaServerPath(value);
+	if (serverPath) return serverPath;
 	if (!isFileUrl(value)) {
 		return fileUrl;
 	}
@@ -316,7 +320,7 @@ export function deriveNextId(prefix: string, ids: string[]): number {
  * media server is unavailable.
  */
 export async function resolveVideoUrl(sourcePath: string): Promise<string> {
-	const trimmedSourcePath = sourcePath.trim();
+	const trimmedSourcePath = fromFileUrl(sourcePath.trim());
 	if (/^(?:https?:|blob:|data:)/i.test(trimmedSourcePath)) {
 		return trimmedSourcePath;
 	}
@@ -484,14 +488,30 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 						: rawStart + 1000;
 					const startMs = Math.max(0, Math.min(rawStart, rawEnd));
 					const endMs = Math.max(startMs + 1, rawEnd);
+					const sourceStartMs = isFiniteNumber(region.sourceStartMs)
+						? Math.max(0, Math.round(region.sourceStartMs))
+						: undefined;
+					let sourceMinMs = isFiniteNumber(region.sourceMinMs)
+						? Math.max(0, Math.round(region.sourceMinMs))
+						: undefined;
+					let sourceMaxMs = isFiniteNumber(region.sourceMaxMs)
+						? Math.max(0, Math.round(region.sourceMaxMs))
+						: undefined;
+					if (
+						sourceMaxMs !== undefined &&
+						sourceMaxMs < Math.max(sourceMinMs ?? 0, sourceStartMs ?? startMs)
+					) {
+						sourceMinMs = undefined;
+						sourceMaxMs = undefined;
+					}
 					return {
 						id: region.id,
 						startMs,
 						endMs,
-						...(isFiniteNumber(region.sourceStartMs)
-							? { sourceStartMs: Math.max(0, Math.round(region.sourceStartMs)) }
-							: {}),
-						speed: isFiniteNumber(region.speed) ? region.speed : 1,
+						sourceStartMs,
+						sourceMinMs,
+						sourceMaxMs,
+						speed: isFiniteNumber(region.speed) && region.speed > 0 ? region.speed : 1,
 						muted: typeof region.muted === "boolean" ? region.muted : false,
 						showSourceAudio:
 							typeof region.showSourceAudio === "boolean"
@@ -500,6 +520,13 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 					};
 				})
 		: [];
+
+	// Migrate before applying editor state, so loaded history and the saved baseline
+	// both begin with the same canonical sequence rather than recording a repair edit.
+	const sequenceClips = closeClipGaps(normalizedClipRegions);
+	const sequenceChanged = sequenceClips.some(
+		(clip, index) => clip !== normalizedClipRegions[index],
+	);
 
 	const normalizedAutoFullTrackClipId =
 		typeof editor.autoFullTrackClipId === "string" ? editor.autoFullTrackClipId : null;
@@ -575,20 +602,12 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 								? region.imageContent
 								: undefined,
 						position: {
-							x: clamp(
-								isFiniteNumber(region.position?.x)
-									? region.position.x
-									: DEFAULT_ANNOTATION_POSITION.x,
-								0,
-								100,
-							),
-							y: clamp(
-								isFiniteNumber(region.position?.y)
-									? region.position.y
-									: DEFAULT_ANNOTATION_POSITION.y,
-								0,
-								100,
-							),
+							x: isFiniteNumber(region.position?.x)
+								? region.position.x
+								: DEFAULT_ANNOTATION_POSITION.x,
+							y: isFiniteNumber(region.position?.y)
+								? region.position.y
+								: DEFAULT_ANNOTATION_POSITION.y,
 						},
 						size: {
 							width: clamp(
@@ -596,14 +615,14 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 									? region.size.width
 									: DEFAULT_ANNOTATION_SIZE.width,
 								1,
-								200,
+								10000,
 							),
 							height: clamp(
 								isFiniteNumber(region.size?.height)
 									? region.size.height
 									: DEFAULT_ANNOTATION_SIZE.height,
 								1,
-								200,
+								10000,
 							),
 						},
 						style: {
@@ -948,17 +967,34 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 			width: cropWidth,
 			height: cropHeight,
 		},
-		zoomRegions: normalizedZoomRegions,
+		zoomRegions: sequenceChanged
+			? rippleRegions(normalizedZoomRegions, normalizedClipRegions, sequenceClips)
+			: normalizedZoomRegions,
 		trimRegions: normalizedTrimRegions,
-		clipRegions: normalizedClipRegions,
+		clipRegions: sequenceClips,
 		autoFullTrackClipId: normalizedAutoFullTrackClipId,
 		autoFullTrackClipEndMs: normalizedAutoFullTrackClipEndMs,
 		speedRegions: normalizedSpeedRegions,
-		annotationRegions: normalizedAnnotationRegions,
-		audioRegions: normalizedAudioRegions,
+		annotationRegions: sequenceChanged
+			? rippleRegions(normalizedAnnotationRegions, normalizedClipRegions, sequenceClips)
+			: normalizedAnnotationRegions,
+		audioRegions: sequenceChanged
+			? rippleRegionAnchors(normalizedAudioRegions, normalizedClipRegions, sequenceClips)
+			: normalizedAudioRegions,
 		autoCaptions: normalizedAutoCaptions,
 		autoCaptionSettings: normalizedAutoCaptionSettings,
 		webcam: {
+			visibleRanges: Array.isArray(webcam.visibleRanges)
+				? webcam.visibleRanges
+						.filter(
+							(range) =>
+								isFiniteNumber(range?.startMs) &&
+								isFiniteNumber(range?.endMs) &&
+								range.startMs >= 0 &&
+								range.endMs > range.startMs,
+						)
+						.map(({ startMs, endMs }) => ({ startMs, endMs }))
+				: undefined,
 			enabled:
 				typeof webcam.enabled === "boolean"
 					? webcam.enabled

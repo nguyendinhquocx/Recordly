@@ -87,10 +87,7 @@ import {
 	type ZoomRegion,
 	type ZoomTransitionEasing,
 } from "./types";
-import {
-	isAnnotationActiveAtTime,
-	shouldClearSelectedAnnotation,
-} from "./videoPlayback/annotationVisibility";
+import { isAnnotationActiveAtTime } from "./videoPlayback/annotationVisibility";
 import { createClipPlayback, findPreviewClipAtTimelineTime } from "./videoPlayback/clipPlayback";
 import { DEFAULT_FOCUS } from "./videoPlayback/constants";
 import {
@@ -124,6 +121,7 @@ import {
 } from "./videoPlayback/sceneMotion";
 import {
 	getWebcamMediaTargetTimeSeconds,
+	isWebcamVisibleAtSourceTime,
 	isWebcamMediaSynchronized,
 	shouldSeekWebcamMedia,
 } from "./videoPlayback/webcamSync";
@@ -294,7 +292,7 @@ export interface VideoPlaybackRef {
 	app: Application | null;
 	videoSprite: Sprite | null;
 	videoContainer: Container | null;
-	containerRef: React.RefObject<HTMLDivElement>;
+	containerRef: React.RefObject<HTMLDivElement | null>;
 	play: () => Promise<void>;
 	pause: () => void;
 	refreshFrame: () => Promise<void>;
@@ -530,9 +528,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		}, []);
 
 		const initializePixiRenderer = useCallback(
-			async (
-				container: HTMLDivElement,
-			): Promise<Application> => {
+			async (container: HTMLDivElement): Promise<Application> => {
 				const backendOrder: PixiPreviewBackend[] = ["webgl", "webgpu"];
 				const attempts: PixiRendererAttempt[] = [];
 
@@ -835,7 +831,14 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				const bubble = webcamBubbleRef.current;
 				const bubbleInner = webcamBubbleInnerRef.current;
 				const overlay = overlayRef.current;
-				if (!bubble || !bubbleInner || !overlay || !webcamEnabled || !webcamVideoPath) {
+				if (
+					!bubble ||
+					!bubbleInner ||
+					!overlay ||
+					!webcamEnabled ||
+					!webcamVideoPath ||
+					!isWebcamVisibleAtSourceTime(webcam, currentTimeRef.current / 1000)
+				) {
 					if (bubble) {
 						bubble.style.display = "none";
 					}
@@ -896,6 +899,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			[
 				webcamCorner,
 				webcamRoundness,
+				webcam,
 				webcamEnabled,
 				webcamMargin,
 				webcamPositionPreset,
@@ -1227,22 +1231,6 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		}, [selectedZoomId]);
 
 		useEffect(() => {
-			if (!selectedAnnotationId || !onSelectAnnotation) {
-				return;
-			}
-
-			if (
-				shouldClearSelectedAnnotation(
-					annotationRegions ?? [],
-					selectedAnnotationId,
-					Math.round(timelineTime * 1000),
-				)
-			) {
-				onSelectAnnotation(null);
-			}
-		}, [annotationRegions, timelineTime, onSelectAnnotation, selectedAnnotationId]);
-
-		useEffect(() => {
 			isPlayingRef.current = isPlaying;
 			const bgVideo = bgVideoRef.current;
 			if (bgVideo) {
@@ -1387,7 +1375,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			zoomInOverlapMsRef.current = zoomInOverlapMs;
-		}, [zoomInOverlapMs]);
+			requestPausedFrameRefresh();
+		}, [zoomInOverlapMs, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			zoomOutDurationMsRef.current = zoomOutDurationMs;
@@ -1396,23 +1385,28 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			connectedZoomGapMsRef.current = connectedZoomGapMs;
-		}, [connectedZoomGapMs]);
+			requestPausedFrameRefresh();
+		}, [connectedZoomGapMs, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			connectedZoomDurationMsRef.current = connectedZoomDurationMs;
-		}, [connectedZoomDurationMs]);
+			requestPausedFrameRefresh();
+		}, [connectedZoomDurationMs, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			zoomInEasingRef.current = zoomInEasing;
-		}, [zoomInEasing]);
+			requestPausedFrameRefresh();
+		}, [zoomInEasing, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			zoomOutEasingRef.current = zoomOutEasing;
-		}, [zoomOutEasing]);
+			requestPausedFrameRefresh();
+		}, [zoomOutEasing, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			connectedZoomEasingRef.current = connectedZoomEasing;
-		}, [connectedZoomEasing]);
+			requestPausedFrameRefresh();
+		}, [connectedZoomEasing, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorTelemetryRef.current = cursorTelemetry;
@@ -1426,43 +1420,53 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			cursorStyleRef.current = cursorStyle;
-		}, [cursorStyle]);
+			requestPausedFrameRefresh();
+		}, [cursorStyle, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSizeRef.current = cursorSize;
-		}, [cursorSize]);
+			requestPausedFrameRefresh();
+		}, [cursorSize, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSmoothingRef.current = cursorSmoothing;
-		}, [cursorSmoothing]);
+			requestPausedFrameRefresh();
+		}, [cursorSmoothing, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSpringStiffnessMultiplierRef.current = cursorSpringStiffnessMultiplier;
-		}, [cursorSpringStiffnessMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cursorSpringStiffnessMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSpringDampingMultiplierRef.current = cursorSpringDampingMultiplier;
-		}, [cursorSpringDampingMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cursorSpringDampingMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSpringMassMultiplierRef.current = cursorSpringMassMultiplier;
-		}, [cursorSpringMassMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cursorSpringMassMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cameraSpringStiffnessMultiplierRef.current = cameraSpringStiffnessMultiplier;
-		}, [cameraSpringStiffnessMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cameraSpringStiffnessMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cameraSpringDampingMultiplierRef.current = cameraSpringDampingMultiplier;
-		}, [cameraSpringDampingMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cameraSpringDampingMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cameraSpringMassMultiplierRef.current = cameraSpringMassMultiplier;
-		}, [cameraSpringMassMultiplier]);
+			requestPausedFrameRefresh();
+		}, [cameraSpringMassMultiplier, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			zoomSmoothnessRef.current = zoomSmoothness;
-		}, [zoomSmoothness]);
+			requestPausedFrameRefresh();
+		}, [zoomSmoothness, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			zoomMotionBlurRef.current = zoomMotionBlur;
@@ -1493,39 +1497,48 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			cursorMotionBlurRef.current = cursorMotionBlur;
-		}, [cursorMotionBlur]);
+			requestPausedFrameRefresh();
+		}, [cursorMotionBlur, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickEffectRef.current = cursorClickEffect;
-		}, [cursorClickEffect]);
+			requestPausedFrameRefresh();
+		}, [cursorClickEffect, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickEffectColorRef.current = cursorClickEffectColor;
-		}, [cursorClickEffectColor]);
+			requestPausedFrameRefresh();
+		}, [cursorClickEffectColor, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickEffectScaleRef.current = cursorClickEffectScale;
-		}, [cursorClickEffectScale]);
+			requestPausedFrameRefresh();
+		}, [cursorClickEffectScale, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickEffectOpacityRef.current = cursorClickEffectOpacity;
-		}, [cursorClickEffectOpacity]);
+			requestPausedFrameRefresh();
+		}, [cursorClickEffectOpacity, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickEffectDurationMsRef.current = cursorClickEffectDurationMs;
-		}, [cursorClickEffectDurationMs]);
+			requestPausedFrameRefresh();
+		}, [cursorClickEffectDurationMs, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickBounceRef.current = cursorClickBounce;
-		}, [cursorClickBounce]);
+			requestPausedFrameRefresh();
+		}, [cursorClickBounce, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorClickBounceDurationRef.current = cursorClickBounceDuration;
-		}, [cursorClickBounceDuration]);
+			requestPausedFrameRefresh();
+		}, [cursorClickBounceDuration, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			cursorSwayRef.current = cursorSway;
-		}, [cursorSway]);
+			requestPausedFrameRefresh();
+		}, [cursorSway, requestPausedFrameRefresh]);
 
 		useEffect(() => {
 			const timeMs = currentTime * 1000;
@@ -1889,9 +1902,13 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			layoutVideoContentRef.current?.();
 			video.pause();
 
+			let preserveCameraAcrossCut = false;
 			const transport = createClipPlayback({
 				video,
 				getClips: () => clipRegionsRef.current,
+				onSourceSeek: (reason) => {
+					preserveCameraAcrossCut = reason === "cut";
+				},
 				onTime: (time, source) => {
 					timelineTimeRef.current = time;
 					if (source !== null) currentTimeRef.current = source * 1000;
@@ -1910,11 +1927,14 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			transport.seek(timelineTimeRef.current);
 			const handleSeeked = () => {
 				isSeekingRef.current = false;
-				shouldSnapPausedFrameRef.current = true;
+				// A source seek at a contiguous cut must not reset the camera springs.
+				if (!preserveCameraAcrossCut || !isPlayingRef.current)
+					shouldSnapPausedFrameRef.current = true;
+				preserveCameraAcrossCut = false;
 			};
 			const handleSeeking = () => {
 				isSeekingRef.current = true;
-				shouldSnapPausedFrameRef.current = true;
+				if (!preserveCameraAcrossCut) shouldSnapPausedFrameRef.current = true;
 			};
 			video.addEventListener("seeked", handleSeeked);
 			video.addEventListener("seeking", handleSeeking);
@@ -2135,7 +2155,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 		useEffect(() => {
 			const overlay = cursorOverlayRef.current;
-			if (!overlay) {
+			if (!pixiReady || !overlay) {
 				return;
 			}
 
@@ -2172,12 +2192,15 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 				overlay.setStyle(cursorStyle);
 				overlay.reset();
+				requestPausedFrameRefresh();
 			})();
 
 			return () => {
 				cancelled = true;
 			};
 		}, [
+			pixiReady,
+			requestPausedFrameRefresh,
 			cursorStyle,
 			cursorSize,
 			cursorSmoothing,
@@ -2388,6 +2411,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				{pixiReady && videoReady && (
 					<div
 						ref={overlayRef}
+						data-preview-overlay
 						className="absolute inset-0 select-none"
 						style={{
 							pointerEvents: "none",
@@ -2406,9 +2430,15 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 						{webcam && webcamVideoPath ? (
 							<div
 								ref={webcamBubbleRef}
+								data-webcam-overlay
 								className="absolute"
 								style={{
-									display: webcam.enabled && !isGap ? "block" : "none",
+									display:
+										webcam.enabled &&
+										!isGap &&
+										isWebcamVisibleAtSourceTime(webcam, currentTime)
+											? "block"
+											: "none",
 									pointerEvents: "none",
 								}}
 							>
@@ -2466,6 +2496,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 								>
 									<div
 										ref={captionBoxRef}
+										className="focus-visible:outline-2 focus-visible:outline-accent"
 										role={
 											onEditAutoCaption && !isCaptionEditing
 												? "button"
@@ -2479,7 +2510,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 												? "Edit current caption"
 												: undefined
 										}
-										onClick={(event) => {
+										onClick={(event) => event.stopPropagation()}
+										onDoubleClick={(event) => {
 											event.stopPropagation();
 											if (!isCaptionEditing) {
 												beginCaptionEdit();
@@ -2683,16 +2715,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 								className="absolute"
 								style={{
 									pointerEvents: "none",
-									left: annotationRecordingRect.x || 0,
-									top: annotationRecordingRect.y || 0,
-									width:
-										annotationRecordingRect.width ||
-										overlayRef.current?.clientWidth ||
-										800,
-									height:
-										annotationRecordingRect.height ||
-										overlayRef.current?.clientHeight ||
-										600,
+									left: 0,
+									top: 0,
+									width: overlayRef.current?.clientWidth || 800,
+									height: overlayRef.current?.clientHeight || 600,
 								}}
 							>
 								{(() => {
@@ -2739,8 +2765,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 												600
 											}
 											recordingRect={{
-												x: 0,
-												y: 0,
+												x: annotationRecordingRect.x,
+												y: annotationRecordingRect.y,
 												width:
 													annotationRecordingRect.width ||
 													overlayRef.current?.clientWidth ||

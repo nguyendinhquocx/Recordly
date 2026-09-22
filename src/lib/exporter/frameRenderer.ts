@@ -44,7 +44,7 @@ import {
 } from "@/components/video-editor/videoPlayback/motionSmoothing";
 import { getSceneEffectMetrics } from "@/components/video-editor/videoPlayback/sceneEffects";
 import { resolveSceneZoomTarget } from "@/components/video-editor/videoPlayback/sceneMotion";
-import { getWebcamMediaTargetTimeSeconds } from "@/components/video-editor/videoPlayback/webcamSync";
+import { getWebcamMediaTargetTimeSeconds, isWebcamVisibleAtSourceTime } from "@/components/video-editor/videoPlayback/webcamSync";
 import {
 	applyZoomTransform,
 	computeZoomTransform,
@@ -1739,7 +1739,7 @@ export class FrameRenderer {
 		const webcam = this.config.webcam;
 		const webcamDecodedFrame = this.webcamDecodedFrame;
 		const webcamVideo = this.webcamVideoElement;
-		if (!webcam?.enabled || (!webcamDecodedFrame && !webcamVideo)) {
+		if (!webcam?.enabled || !isWebcamVisibleAtSourceTime(webcam, this.currentVideoTime) || (!webcamDecodedFrame && !webcamVideo)) {
 			return;
 		}
 

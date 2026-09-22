@@ -1,5 +1,6 @@
 /* biome-ignore-all lint/correctness/useExhaustiveDependencies: mutable timeline bootstrap refs intentionally do not trigger effects. */
 import { type MutableRefObject, useCallback, useEffect, useMemo } from "react";
+import { closeClipGaps, rippleRegionAnchors, rippleRegions } from "../clipSequence";
 import { projectCaptionCues } from "../captionTimeline";
 import { deriveNextId } from "../projectPersistence";
 import type { useTimelineState } from "../state/useTimelineState";
@@ -57,7 +58,19 @@ export function useTimelineProjection({
 						nextRegions.map(({ id }) => id),
 					);
 				}
-				timeline.setClipRegions(nextRegions);
+				const sequence = closeClipGaps(nextRegions);
+				timeline.setClipRegions(sequence);
+				if (trimRegions.length > 0) {
+					timeline.setZoomRegions((current) =>
+						rippleRegions(current, nextRegions, sequence),
+					);
+					timeline.setAnnotationRegions((current) =>
+						rippleRegions(current, nextRegions, sequence),
+					);
+					timeline.setAudioRegions((current) =>
+						rippleRegionAnchors(current, nextRegions, sequence),
+					);
+				}
 			}
 			initializedRef.current = true;
 			return;
@@ -96,7 +109,8 @@ export function useTimelineProjection({
 	);
 	const timelinePlayheadTime = currentTime;
 	const timelineDuration = useMemo(
-		() => getTimelineDurationMs(clipRegions, duration * 1000) / 1000,
+		() =>
+			getTimelineDurationMs(clipRegions, initializedRef.current ? 0 : duration * 1000) / 1000,
 		[clipRegions, duration],
 	);
 	const effectiveSpeedRegions = useMemo<SpeedRegion[]>(() => {

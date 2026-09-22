@@ -3,8 +3,8 @@ import type { TimelineEditorHandle } from "../timeline/TimelineEditor";
 import type { VideoPlaybackRef } from "../VideoPlayback";
 
 interface UseEditorPlaybackControlsParams {
-	videoPlaybackRef: RefObject<VideoPlaybackRef>;
-	timelineRef: RefObject<TimelineEditorHandle>;
+	videoPlaybackRef: RefObject<VideoPlaybackRef | null>;
+	timelineRef: RefObject<TimelineEditorHandle | null>;
 	playSourceAudioPreview: () => void;
 	timelinePlayheadTime: number;
 	timelineDuration: number;

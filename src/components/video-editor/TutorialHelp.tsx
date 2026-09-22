@@ -22,7 +22,7 @@ import { useScopedT } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";
 import { formatBinding, SHORTCUT_ACTIONS, SHORTCUT_LABELS } from "@/lib/shortcuts";
 import { formatShortcut } from "@/utils/platformUtils";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 export const RECORDLY_ISSUES_URL = "https://github.com/webadderallorg/Recordly/issues";
 const RECORDLY_DISCORD_URL = "https://discord.gg/sdv2FBVNgE";
@@ -31,7 +31,7 @@ const CONTACT_EMAIL = "youngchen3442@gmail.com";
 export const APP_HEADER_ACTION_BUTTON_CLASS =
 	"h-7 px-2 text-xs text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-all gap-1.5";
 export const APP_HEADER_ICON_BUTTON_CLASS =
-	"h-7 w-7 p-0 text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-all";
+	"h-9 w-9 min-w-9 p-0 text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-all";
 
 interface KeyboardShortcutsDialogProps {
 	triggerLabel?: string;
@@ -96,7 +96,7 @@ export function FeedbackDialog() {
 					<MessageSquareMore className="h-3.5 w-3.5" />
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-lg bg-editor-dialog border-foreground/10 [&>button]:text-muted-foreground [&>button:hover]:text-foreground">
+			<DialogContent className="max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
 						<MessageSquareMore className="h-5 w-5 text-[#2563EB]" />{" "}
@@ -129,7 +129,6 @@ export function FeedbackDialog() {
 										t("feedback.openFailed", "Failed to open link."),
 									)
 								}
-								className="border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground"
 							>
 								<ExternalLink className="h-3.5 w-3.5" />
 							</Button>
@@ -152,7 +151,6 @@ export function FeedbackDialog() {
 										t("feedback.openFailed", "Failed to open link."),
 									)
 								}
-								className="border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground"
 							>
 								<Twitter className="h-3.5 w-3.5" />
 							</Button>
@@ -167,7 +165,7 @@ export function FeedbackDialog() {
 								t("feedback.openFailed", "Failed to open link."),
 							)
 						}
-						className="h-10 w-full justify-between border-foreground/10 bg-foreground/5 px-4 text-foreground hover:bg-foreground/10 hover:text-foreground"
+						className="h-10 w-full justify-between px-4"
 					>
 						<span className="flex items-center gap-2 text-sm font-medium">
 							<MessageSquareMore className="h-4 w-4" />
@@ -212,7 +210,7 @@ export function KeyboardShortcutsDialog({
 					{triggerLabel ? <span className="font-medium">{triggerLabel}</span> : null}
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-lg bg-editor-dialog border-foreground/10 [&>button]:text-muted-foreground [&>button:hover]:text-foreground">
+			<DialogContent className="max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
 						<Keyboard className="h-5 w-5 text-[#2563EB]" />{" "}
@@ -268,12 +266,7 @@ export function KeyboardShortcutsDialog({
 						</div>
 					</div>
 					<div className="flex justify-end">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={openConfig}
-							className="border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground"
-						>
+						<Button type="button" variant="outline" onClick={openConfig}>
 							<Settings2 className="h-4 w-4" />
 							{t("keyboardShortcuts.customize")}
 						</Button>
@@ -295,7 +288,7 @@ export function TutorialHelp() {
 					<span className="font-medium">{t("tutorial.howTrimmingWorks")}</span>
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-w-2xl bg-editor-dialog border-foreground/10 [&>button]:text-muted-foreground [&>button:hover]:text-foreground">
+			<DialogContent className="max-w-2xl">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
 						<Scissors className="w-5 h-5 text-[#ef4444]" /> {t("tutorial.title")}

@@ -70,7 +70,7 @@ export const RecordingControls = ({
 						variant="ghost"
 						size="icon"
 						iconSize="lg"
-						className={microphoneEnabled ? styles.ibActive : ""}
+						className={microphoneEnabled ? "text-accent" : ""}
 						aria-label={t("recording.micToggleDisabledTip")}
 						disabled
 						onClick={onToggleMicrophone}
@@ -92,7 +92,7 @@ export const RecordingControls = ({
 					onClick={onPauseResume}
 					title={paused ? t("recording.resume") : t("recording.pause")}
 					aria-label={paused ? t("recording.resume") : t("recording.pause")}
-					className={paused ? styles.ibGreen : ""}
+					className={paused ? "text-success" : ""}
 				>
 					{paused ? (
 						<PlayIcon size={18} fill="currentColor" strokeWidth={0} />
@@ -101,15 +101,17 @@ export const RecordingControls = ({
 					)}
 				</Button>
 
-				<button
+				<Button
 					type="button"
 					onClick={onStopRecording}
 					title={t("recording.stop")}
 					aria-label={t("recording.stop")}
-					className={`${styles.recBtn} ${styles.electronNoDrag}`}
+					variant="destructive"
+					size="icon"
+					className={styles.electronNoDrag}
 				>
 					<span className={styles.stopSquare} />
-				</button>
+				</Button>
 
 				<Button
 					variant="ghost"

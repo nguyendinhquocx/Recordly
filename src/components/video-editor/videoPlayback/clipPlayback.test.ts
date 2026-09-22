@@ -44,26 +44,53 @@ describe("clip timeline playback", () => {
 		const onTime = vi.fn();
 		const onPlaying = vi.fn();
 		const onError = vi.fn();
+		const onSourceSeek = vi.fn();
 		const playback = createClipPlayback({
 			video,
 			getClips: () => clips,
 			onTime,
 			onPlaying,
 			onError,
+			onSourceSeek,
 		});
-		return { video, playback, onTime, onPlaying, onError };
+		return { video, playback, onTime, onPlaying, onError, onSourceSeek };
 	}
-	it("takes real time through a deleted middle at 3x, then resumes at the retained source in-point", async () => {
+	it("crosses a source cut at the same 2.8s timeline timestamp without playing the removed footage", async () => {
+		const { video, playback, onTime, onSourceSeek } = setup([
+			{ id: "a", startMs: 0, endMs: 2800, sourceStartMs: 0, speed: 1 },
+			{ id: "b", startMs: 2800, endMs: 5300, sourceStartMs: 3500, speed: 1 },
+		]);
+		playback.seek(2.799);
+		expect(onTime).toHaveBeenLastCalledWith(2.799, 2.799);
+		expect(onSourceSeek).toHaveBeenLastCalledWith("seek");
+		await playback.play();
+		video.currentTime = 2.8;
+		advance(1);
+		expect(onTime).toHaveBeenLastCalledWith(2.8, 3.5);
+		expect(video.currentTime).toBe(3.5);
+		expect(onSourceSeek).toHaveBeenLastCalledWith("cut");
+		playback.seek(2.8005);
+		expect(onSourceSeek).toHaveBeenLastCalledWith("seek");
+		video.currentTime = 3.501;
+		advance(1);
+		expect(onTime).toHaveBeenLastCalledWith(2.801, 3.501);
+	});
+	it("cannot simulate playback after the final clip is deleted", async () => {
+		const { video, playback, onTime } = setup([]);
+		await playback.play();
+		advance(1000);
+		expect(playback.isPlaying).toBe(false);
+		expect(video.play).not.toHaveBeenCalled();
+		expect(onTime).not.toHaveBeenCalled();
+	});
+
+	it("skips a deleted middle at 3x and resumes at the retained source in-point", async () => {
 		const { video, playback, onTime } = setup();
 		await playback.play();
 		expect(video.playbackRate).toBe(3);
 		video.currentTime = 3;
 		advance(1000);
-		expect(onTime).toHaveBeenLastCalledWith(1, null);
 		expect(playback.isPlaying).toBe(true);
-		advance(500);
-		expect(onTime).toHaveBeenLastCalledWith(1.5, null);
-		advance(500);
 		expect(video.currentTime).toBe(6);
 		expect(onTime).toHaveBeenLastCalledWith(2, 6);
 		video.currentTime = 9;
@@ -73,21 +100,24 @@ describe("clip timeline playback", () => {
 		advance(1000);
 		expect(playback.isPlaying).toBe(false);
 	});
-	it("seeks, pauses and resumes inside a gap without revealing source footage or restarting the gap", async () => {
+	it("keeps paused gap seeks editable and skips to the next clip when play resumes", async () => {
 		const { video, playback, onTime } = setup();
 		playback.seek(1.25);
 		expect(onTime).toHaveBeenLastCalledWith(1.25, null);
 		await playback.play();
-		expect(video.play).not.toHaveBeenCalled();
-		advance(250);
+		expect(onTime).toHaveBeenLastCalledWith(2, 6);
+		expect(video.play).toHaveBeenCalled();
 		playback.pause();
 		advance(5000);
-		expect(onTime).toHaveBeenLastCalledWith(1.5, null);
+		expect(onTime).toHaveBeenLastCalledWith(2, 6);
 		await playback.play();
+		video.currentTime = 6.75;
 		advance(250);
-		expect(onTime).toHaveBeenLastCalledWith(1.75, null);
+		expect(onTime).toHaveBeenLastCalledWith(2.25, 6.75);
+		playback.seek(1.5);
+		expect(onTime).toHaveBeenLastCalledWith(2, 6);
 	});
-	it("does not skip a short gap when a media tick overshoots the cut", async () => {
+	it("skips a short gap without skipping the next clip in-point when a tick overshoots", async () => {
 		const { video, playback, onTime } = setup([
 			{ id: "a", startMs: 0, endMs: 1000, sourceStartMs: 0, speed: 3 },
 			{ id: "b", startMs: 1010, endMs: 2000, sourceStartMs: 6000, speed: 3 },
@@ -95,8 +125,6 @@ describe("clip timeline playback", () => {
 		await playback.play();
 		video.currentTime = 3.15;
 		advance(1050);
-		expect(onTime).toHaveBeenLastCalledWith(1, null);
-		advance(10);
 		expect(onTime).toHaveBeenLastCalledWith(1.01, 6);
 	});
 	it("leaves a clip at source EOF even when metadata rounding extends its timeline end", async () => {
@@ -119,14 +147,12 @@ describe("clip timeline playback", () => {
 		advance(2000);
 		expect(onTime).toHaveBeenLastCalledWith(3, 9);
 	});
-	it("plays leading gaps and clips placed earlier than their source positions", async () => {
+	it("skips leading gaps and plays clips from their source positions", async () => {
 		const { video, playback, onTime } = setup([
 			{ id: "moved", startMs: 1000, endMs: 2000, sourceStartMs: 9000, speed: 1 },
 		]);
 		await playback.play();
-		advance(500);
-		expect(onTime).toHaveBeenLastCalledWith(0.5, null);
-		advance(500);
+		expect(onTime).toHaveBeenLastCalledWith(1, 9);
 		expect(video.currentTime).toBe(9);
 		expect(video.playbackRate).toBe(1);
 	});
@@ -187,7 +213,9 @@ describe("clip timeline playback", () => {
 	it("does not restart decoder seeks when repeatedly selecting the start", () => {
 		const { playback, video } = setup();
 		let currentTime = 0;
-		const setTime = vi.fn((value: number) => { currentTime = value; });
+		const setTime = vi.fn((value: number) => {
+			currentTime = value;
+		});
 		Object.defineProperty(video, "currentTime", {
 			get: () => currentTime,
 			set: setTime,

@@ -134,6 +134,8 @@ export type WebcamPositionPreset =
 	| "custom";
 
 export interface WebcamOverlaySettings {
+	/** Source-time intervals containing webcam footage in an imported sequence. */
+	visibleRanges?: { startMs: number; endMs: number }[];
 	enabled: boolean;
 	sourcePath: string | null;
 	timeOffsetMs: number;
@@ -236,6 +238,9 @@ export interface ClipRegion {
 	 * left-trimming a sped-up clip moves the source in without moving the clip.
 	 */
 	sourceStartMs?: number;
+	/** Bounds of this recording within the shared media source. */
+	sourceMinMs?: number;
+	sourceMaxMs?: number;
 	speed: number;
 	muted?: boolean;
 	showSourceAudio?: boolean;

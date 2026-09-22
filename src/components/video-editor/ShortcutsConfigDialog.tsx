@@ -1,6 +1,6 @@
 import { Keyboard, ArrowCounterClockwise as RotateCcw } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -126,7 +126,7 @@ export function ShortcutsConfigDialog() {
 				if (!open) handleClose();
 			}}
 		>
-			<DialogContent className="bg-editor-dialog border-foreground/10 text-foreground max-w-[460px]">
+			<DialogContent className="max-w-[460px]">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2 text-sm">
 						<Keyboard className="w-4 h-4 text-[#2563EB]" />
@@ -147,7 +147,7 @@ export function ShortcutsConfigDialog() {
 									<span className="text-sm text-muted-foreground">
 										{SHORTCUT_LABELS[action]}
 									</span>
-									<button
+									<Button
 										type="button"
 										onClick={() => {
 											setConflict(null);
@@ -159,18 +159,18 @@ export function ShortcutsConfigDialog() {
 												: t("shortcutsConfig.clickToChange")
 										}
 										className={[
-											"px-2 py-1 rounded text-xs font-mono border transition-all min-w-[90px] text-center select-none",
+											"px-2 py-1 text-xs min-w-[90px] text-center select-none",
 											isCapturing
-												? "bg-[#2563EB]/20 border-[#2563EB] text-[#2563EB] animate-pulse"
+												? "animate-pulse"
 												: hasConflict
-													? "bg-amber-500/10 border-amber-500/50 text-amber-400"
-													: "bg-foreground/5 border-foreground/10 text-foreground hover:border-[#2563EB]/50 hover:text-[#2563EB] cursor-pointer",
+													? "text-amber-400"
+													: "cursor-pointer",
 										].join(" ")}
 									>
 										{isCapturing
 											? t("shortcutsConfig.pressAKey")
 											: formatBinding(draft[action], isMac)}
-									</button>
+									</Button>
 								</div>
 								{hasConflict && conflict?.conflictWith.type === "configurable" && (
 									<div className="flex items-center justify-between px-1 py-1.5 mb-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-xs">
@@ -182,20 +182,22 @@ export function ShortcutsConfigDialog() {
 											})}
 										</span>
 										<div className="flex gap-1.5">
-											<button
+											<Button
+												variant="ghost"
 												type="button"
 												onClick={handleSwap}
-												className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded text-amber-300 font-medium transition-colors"
+												className="px-2 py-0.5 text-amber-300"
 											>
 												{t("shortcutsConfig.swap")}
-											</button>
-											<button
+											</Button>
+											<Button
+												variant="ghost"
 												type="button"
 												onClick={handleCancelConflict}
-												className="px-2 py-0.5 bg-foreground/5 hover:bg-foreground/10 border border-foreground/10 rounded text-muted-foreground transition-colors"
+												className="px-2 py-0.5"
 											>
 												{t("shortcutsConfig.cancel")}
-											</button>
+											</Button>
 										</div>
 									</div>
 								)}
@@ -230,7 +232,7 @@ export function ShortcutsConfigDialog() {
 						title={t("shortcutsConfig.resetToDefaults")}
 						variant="ghost"
 						size="sm"
-						className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 gap-1.5 max-w-[200px]"
+						className="gap-1.5 max-w-[200px]"
 						onClick={handleReset}
 					>
 						<RotateCcw className="w-3 h-3" />
@@ -240,11 +242,7 @@ export function ShortcutsConfigDialog() {
 						<Button variant="ghost" size="sm" onClick={handleClose}>
 							{t("shortcutsConfig.cancel")}
 						</Button>
-						<Button
-							size="sm"
-							className="bg-[#2563EB] hover:bg-[#1d4ed8] text-white"
-							onClick={handleSave}
-						>
+						<Button size="sm" onClick={handleSave}>
 							{t("shortcutsConfig.save")}
 						</Button>
 					</div>

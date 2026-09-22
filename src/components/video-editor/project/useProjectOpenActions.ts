@@ -6,7 +6,7 @@ import {
 	useCallback,
 	useEffect,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { fromFileUrl, resolveVideoUrl } from "../projectPersistence";
 import type { useAppearanceState } from "../state/useAppearanceState";
 import type { useProjectState } from "../state/useProjectState";
@@ -66,19 +66,25 @@ export function useProjectOpenActions({
 	const handleOpenProjectFromLibrary = useCallback(
 		async (projectPath: string) => {
 			if (!(await confirmReplaceSourceWithUnsavedChanges("open another project"))) return;
-			const result = await window.electronAPI.openProjectFileAtPath(projectPath);
-			if (result.canceled) return;
-			if (!result.success) {
-				toast.error(result.message || "Failed to load project");
-				return;
+			try {
+				const result = await window.electronAPI.openProjectFileAtPath(projectPath);
+				if (result.canceled) return;
+				if (!result.success) {
+					project.setError(result.error || result.message || "Failed to load project");
+					return;
+				}
+				if (!(await applyLoadedProject(result.project, result.path ?? null))) {
+					project.setError("Could not load project: invalid project file format");
+					return;
+				}
+				project.setProjectBrowserOpen(false);
+				await refreshProjectLibrary();
+				toast.success(`Project loaded from ${result.path}`);
+			} catch (error) {
+				project.setError(
+					`Could not load project: ${error instanceof Error ? error.message : String(error)}`,
+				);
 			}
-			if (!(await applyLoadedProject(result.project, result.path ?? null))) {
-				toast.error("Invalid project file format");
-				return;
-			}
-			project.setProjectBrowserOpen(false);
-			await refreshProjectLibrary();
-			toast.success(`Project loaded from ${result.path}`);
 		},
 		[
 			applyLoadedProject,
@@ -90,56 +96,67 @@ export function useProjectOpenActions({
 
 	const handleImportMediaOrProject = useCallback(async () => {
 		if (!(await confirmReplaceSourceWithUnsavedChanges("import a file"))) return;
-		const result = await window.electronAPI.openVideoFilePicker({ includeProjects: true });
-		if (result.canceled) return;
-		if (!result.success) {
-			toast.error(result.message || "Failed to import file");
-			return;
-		}
-		if (result.kind === "project" || result.project) {
-			if (!(await applyLoadedProject(result.project, result.path ?? null))) {
-				toast.error("Invalid project file format");
+		try {
+			const result = await window.electronAPI.openVideoFilePicker({ includeProjects: true });
+			if (result.canceled) return;
+			if (!result.success) {
+				toast.error(result.message || "Failed to import file");
 				return;
 			}
+			if (result.kind === "project" || result.project) {
+				if (!(await applyLoadedProject(result.project, result.path ?? null))) {
+					project.setError("Could not load project: invalid project file format");
+					return;
+				}
+				project.setProjectBrowserOpen(false);
+				await refreshProjectLibrary();
+				toast.success(
+					result.path ? `Project loaded from ${result.path}` : "Project loaded",
+				);
+				return;
+			}
+			if (!result.path) {
+				toast.error("No media file selected");
+				return;
+			}
+
+			const sourcePath = fromFileUrl(result.path);
+			const setPathResult = await window.electronAPI.setCurrentVideoPath(sourcePath, {
+				preserveProjectPath: false,
+			});
+			if (!setPathResult.success) throw new Error("Could not load media");
+			const sourceVideoUrl = await resolveVideoUrl(sourcePath);
+			try {
+				videoPlaybackRef.current?.pause();
+			} catch {
+				// The preview may already be tearing down.
+			}
+			setIsPlaying(false);
+			setCurrentTime(0);
+			setDuration(0);
+			project.setVideoSourcePath(sourcePath);
+			project.setVideoPath(sourceVideoUrl);
+			project.setCurrentProjectPath(null);
+			project.setLastSavedSnapshot(null);
+			resetSourceScopedEditorState();
+			pendingFreshRecordingAutoZoomPathRef.current =
+				appearance.autoApplyFreshRecordingAutoZooms ? sourceVideoUrl : null;
+			appearance.setWebcam((previous) => ({
+				...previous,
+				visibleRanges: undefined,
+				enabled: false,
+				sourcePath: null,
+				timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
+			}));
+			applySessionPresentation(null);
 			project.setProjectBrowserOpen(false);
 			await refreshProjectLibrary();
-			toast.success(result.path ? `Project loaded from ${result.path}` : "Project loaded");
-			return;
+			toast.success("Media imported");
+		} catch (error) {
+			project.setError(
+				`Could not load file: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
-		if (!result.path) {
-			toast.error("No media file selected");
-			return;
-		}
-
-		const sourcePath = fromFileUrl(result.path);
-		await window.electronAPI.setCurrentVideoPath(sourcePath, { preserveProjectPath: false });
-		const sourceVideoUrl = await resolveVideoUrl(sourcePath);
-		try {
-			videoPlaybackRef.current?.pause();
-		} catch {
-			// The preview may already be tearing down.
-		}
-		setIsPlaying(false);
-		setCurrentTime(0);
-		setDuration(0);
-		project.setVideoSourcePath(sourcePath);
-		project.setVideoPath(sourceVideoUrl);
-		project.setCurrentProjectPath(null);
-		project.setLastSavedSnapshot(null);
-		resetSourceScopedEditorState();
-		pendingFreshRecordingAutoZoomPathRef.current = appearance.autoApplyFreshRecordingAutoZooms
-			? sourceVideoUrl
-			: null;
-		appearance.setWebcam((previous) => ({
-			...previous,
-			enabled: false,
-			sourcePath: null,
-			timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
-		}));
-		applySessionPresentation(null);
-		project.setProjectBrowserOpen(false);
-		await refreshProjectLibrary();
-		toast.success("Media imported");
 	}, [
 		confirmReplaceSourceWithUnsavedChanges,
 		applyLoadedProject,

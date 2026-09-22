@@ -25,12 +25,14 @@ export function createClipPlayback({
 	onTime,
 	onPlaying,
 	onError,
+	onSourceSeek,
 }: {
 	video: HTMLVideoElement;
 	getClips: () => ClipRegion[];
 	onTime: (timelineSeconds: number, sourceSeconds: number | null) => void;
 	onPlaying: (playing: boolean) => void;
 	onError: (error: unknown) => void;
+	onSourceSeek?: (reason: "cut" | "seek") => void;
 }) {
 	let timeMs = 0;
 	let playing = false;
@@ -38,7 +40,7 @@ export function createClipPlayback({
 	let lastTick = 0;
 	let activeClip: ClipRegion | null = null;
 	let playRequest = 0;
-	const duration = () => getTimelineDurationMs(getClips(), video.duration * 1000);
+	const duration = () => getTimelineDurationMs(getClips(), 0);
 
 	const pause = () => {
 		playRequest++;
@@ -58,7 +60,14 @@ export function createClipPlayback({
 		});
 	};
 	const sync = (seek = false) => {
-		const clip = findPreviewClipAtTimelineTime(timeMs, getClips());
+		const clips = getClips();
+		// Empty timeline space is skipped during playback. Clip positions and
+		// paused seeks stay intact so editing a gap never moves source footage.
+		if (playing && !findPreviewClipAtTimelineTime(timeMs, clips)) {
+			const next = sortClipRegions(clips).find((clip) => clip.startMs > timeMs);
+			if (next) timeMs = next.startMs;
+		}
+		const clip = findPreviewClipAtTimelineTime(timeMs, clips);
 		const sourceMs = clip
 			? getClipSourceStartMs(clip) + (timeMs - clip.startMs) * clip.speed
 			: null;
@@ -78,13 +87,21 @@ export function createClipPlayback({
 				const targetMs = atEnd
 					? Math.max(getClipSourceStartMs(clip), sourceMs - 0.001)
 					: sourceMs;
-				const target = Math.max(0, Math.min(
-					Number.isFinite(video.duration) ? Math.max(0, video.duration - 0.000001) : Infinity,
-					targetMs / 1000,
-				));
+				const target = Math.max(
+					0,
+					Math.min(
+						Number.isFinite(video.duration)
+							? Math.max(0, video.duration - 0.000001)
+							: Infinity,
+						targetMs / 1000,
+					),
+				);
 				// Assigning currentTime even to its current value starts another
 				// asynchronous seek in Chromium (especially disruptive at zero).
-				if (Math.abs(video.currentTime - target) > 1e-8) video.currentTime = target;
+				if (Math.abs(video.currentTime - target) > 1e-8) {
+					onSourceSeek?.(playing && !seek ? "cut" : "seek");
+					video.currentTime = target;
+				}
 			}
 			if (playing && (seek || clip !== activeClip)) playSource();
 		} else {
@@ -98,7 +115,7 @@ export function createClipPlayback({
 		request = null;
 		if (!playing) return;
 		// Follow the media inside footage (buffering must not skip content).
-		// A gap has no source clock, so advance it with elapsed real time.
+		// With no clips loaded, elapsed real time is the fallback clock.
 		if (!activeClip) timeMs += now - lastTick;
 		else if (!video.seeking) {
 			timeMs = video.ended
@@ -125,7 +142,7 @@ export function createClipPlayback({
 			return playing;
 		},
 		play: async () => {
-			if (playing) return;
+			if (playing || getClips().length === 0) return;
 			if (timeMs >= duration()) timeMs = 0;
 			playing = true;
 			onPlaying(true);

@@ -312,7 +312,7 @@ describe("StreamingVideoDecoder local media loading", () => {
 
 		expect(window.electronAPI.readLocalFile).not.toHaveBeenCalled();
 		expect(mockDemuxerLoad).toHaveBeenCalledWith(
-			"http://127.0.0.1:43123/video?path=%2Ftmp%2Fcapture.mp4",
+			"http://127.0.0.1:4321/video?path=%2Ftmp%2Fcapture.mp4",
 		);
 	});
 

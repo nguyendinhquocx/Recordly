@@ -110,6 +110,8 @@ export function buildTimelineItems(params: {
 }
 
 export function buildAllRegionSpans(params: {
+	annotationRegions?: AnnotationRegion[];
+	captionCues?: CaptionCue[];
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
 	audioRegions: AudioRegion[];
@@ -133,7 +135,23 @@ export function buildAllRegionSpans(params: {
 		end: r.endMs,
 		rowId: getAudioTrackRowId(r.trackIndex ?? 0),
 	}));
-	return [...zooms, ...clips, ...audios];
+	return [
+		...zooms,
+		...clips,
+		...audios,
+		...(params.annotationRegions ?? []).map((r) => ({
+			id: r.id,
+			start: r.startMs,
+			end: r.endMs,
+			rowId: getAnnotationTrackRowId(r.trackIndex ?? 0),
+		})),
+		...(params.captionCues ?? []).map((r) => ({
+			id: r.id,
+			start: r.startMs,
+			end: r.endMs,
+			rowId: CAPTION_ROW_ID,
+		})),
+	];
 }
 
 export function resolveDropRowId(

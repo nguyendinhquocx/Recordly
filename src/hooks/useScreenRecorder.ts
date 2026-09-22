@@ -1,6 +1,6 @@
 import { fixWebmDuration } from "@fix-webm-duration/fix";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { getEffectiveRecordingDurationMs } from "@/lib/mediaTiming";
 import {
 	getVideoExtensionForMimeType,
@@ -2394,7 +2394,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(false);
 			window.electronAPI?.setRecordingState(false);
 			void (async () => {
-				await discardActiveNativeCapture();
+				await Promise.allSettled([discardActiveNativeCapture(), stopMicFallbackRecorder()]);
 			})();
 			return;
 		}
@@ -2408,7 +2408,13 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(false);
 			window.electronAPI?.setRecordingState(false);
 		}
-	}, [cleanupCapturedMedia, discardActiveNativeCapture, markRecordingResumed, recording]);
+	}, [
+		cleanupCapturedMedia,
+		discardActiveNativeCapture,
+		markRecordingResumed,
+		recording,
+		stopMicFallbackRecorder,
+	]);
 
 	const toggleRecording = async () => {
 		if (starting || countdownActive || finalizing) {

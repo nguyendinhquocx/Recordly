@@ -1,3 +1,4 @@
+import { isLibrarySequenceSource } from "./sequenceSource";
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import { promisify } from "node:util";
@@ -513,7 +514,9 @@ export async function getCompanionAudioFallbackInfo(videoPath: string) {
 	}
 
 	let paths: string[];
-	if (await hasEmbeddedAudioStream(videoPath)) {
+	if (isLibrarySequenceSource(videoPath)) {
+		paths = companionCandidates.flatMap((candidate) => candidate.usablePaths);
+	} else if (await hasEmbeddedAudioStream(videoPath)) {
 		const hasUsableMacSystemCompanion = companionCandidates.some(
 			(candidate) =>
 				candidate.platform === "mac" &&

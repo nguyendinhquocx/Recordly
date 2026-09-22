@@ -1,3 +1,4 @@
+import { Card } from "@heroui/react";
 import type { Dispatch, FormEvent, RefObject, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ interface EditorDialogsProps {
 	setProjectSaveDialogOpen: Dispatch<SetStateAction<boolean>>;
 	projectSaveDialogDraft: string;
 	setProjectSaveDialogDraft: Dispatch<SetStateAction<string>>;
-	projectSaveDialogInputRef: RefObject<HTMLInputElement>;
+	projectSaveDialogInputRef: RefObject<HTMLInputElement | null>;
 	isSavingProjectDialog: boolean;
 	resolveProjectSaveDialog: (saved: boolean) => void;
 	handleProjectSaveDialogSubmit: (event?: FormEvent<HTMLFormElement>) => Promise<void>;
@@ -36,7 +37,7 @@ interface EditorDialogsProps {
 	projectBrowserOpen: boolean;
 	setProjectBrowserOpen: Dispatch<SetStateAction<boolean>>;
 	projectLibraryEntries: ProjectLibraryEntry[];
-	projectBrowserAnchorRef: RefObject<HTMLButtonElement>;
+	projectBrowserAnchorRef: RefObject<HTMLButtonElement | null>;
 	handleImportMediaOrProject: () => Promise<void>;
 	handleOpenProjectFromLibrary: (projectPath: string) => Promise<void>;
 	nativeCaptureUnavailableModalOpen: boolean;
@@ -75,7 +76,7 @@ export function EditorDialogs({
 					else if (!isSavingProjectDialog) resolveProjectSaveDialog(false);
 				}}
 			>
-				<DialogContent className="max-w-sm border-foreground/10 bg-editor-dialog text-foreground">
+				<DialogContent className="max-w-sm">
 					<form onSubmit={(event) => void handleProjectSaveDialogSubmit(event)}>
 						<DialogHeader>
 							<DialogTitle>
@@ -92,7 +93,7 @@ export function EditorDialogs({
 							<label className="mb-2 block text-xs font-medium text-muted-foreground">
 								{t("editor.project.saveNameLabel", "Project name")}
 							</label>
-							<div className="flex items-center overflow-hidden rounded-md border border-foreground/10 bg-editor-panel">
+							<Card className="flex-row items-center overflow-hidden">
 								<Input
 									ref={projectSaveDialogInputRef}
 									value={projectSaveDialogDraft}
@@ -100,13 +101,13 @@ export function EditorDialogs({
 										setProjectSaveDialogDraft(event.target.value)
 									}
 									disabled={isSavingProjectDialog}
-									className="h-10 flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+									className="h-10 flex-1"
 									aria-label={t("editor.project.saveNameLabel", "Project name")}
 								/>
 								<span className="shrink-0 px-3 text-xs font-medium text-muted-foreground/70">
 									.recordly
 								</span>
-							</div>
+							</Card>
 						</div>
 						<DialogFooter>
 							<Button
@@ -134,7 +135,7 @@ export function EditorDialogs({
 					else resolveUnsavedChangesDialog("cancel");
 				}}
 			>
-				<DialogContent className="max-w-sm border-foreground/10 bg-editor-dialog text-foreground">
+				<DialogContent className="max-w-sm">
 					<DialogHeader>
 						<DialogTitle>
 							{t("editor.project.unsavedChangesTitle", "Unsaved changes")}
@@ -182,7 +183,7 @@ export function EditorDialogs({
 				open={nativeCaptureUnavailableModalOpen}
 				onOpenChange={setNativeCaptureUnavailableModalOpen}
 			>
-				<DialogContent className="max-w-md bg-editor-dialog border-foreground/10 text-foreground">
+				<DialogContent className="max-w-md">
 					<DialogHeader>
 						<DialogTitle>
 							{t(

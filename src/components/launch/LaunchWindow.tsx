@@ -231,9 +231,9 @@ function LaunchWindowContent() {
 						onOpen={beginInteractiveHudAction}
 						trigger={
 							<Button
-								variant="outline"
+								variant="ghost"
 								size="lg"
-								className={`${styles.electronNoDrag} group gap-2 px-3 min-w-0 max-w-[180px] rounded-[11px] font-medium text-[12px] shrink-0 border-[var(--launch-border)] bg-[var(--launch-surface)] text-[var(--launch-text)] hover:border-[var(--launch-border-strong)] hover:bg-[var(--launch-hover)] transition-all ${openId === "sources" ? "border-[var(--launch-border-strong)] bg-[var(--launch-hover)]" : ""}`}
+								className={` ${styles.electronNoDrag} group gap-2 px-3 min-w-0 max-w-[180px] shrink-0  ${openId === "sources" ? "border-[var(--launch-border-strong)] bg-[var(--launch-hover)]" : ""} `}
 								title={selectedSource}
 							>
 								<MonitorIcon size={16} className="shrink-0" />
@@ -278,7 +278,7 @@ function LaunchWindowContent() {
 								? t("recording.disableMicrophone")
 								: t("recording.enableMicrophone")
 						}
-						className={microphoneEnabled ? styles.ibActive : ""}
+						className={microphoneEnabled ? "text-accent" : ""}
 					>
 						{microphoneEnabled ? (
 							<MicrophoneIcon size={18} />
@@ -318,7 +318,7 @@ function LaunchWindowContent() {
 								? t("recording.disableWebcam")
 								: t("recording.enableWebcam")
 						}
-						className={webcamEnabled ? styles.ibActive : ""}
+						className={webcamEnabled ? "text-accent" : ""}
 					>
 						{webcamEnabled ? (
 							<VideoCameraIcon size={18} />
@@ -338,16 +338,18 @@ function LaunchWindowContent() {
 						size="icon"
 						iconSize="lg"
 						title={t("recording.countdownDelay")}
-						className={countdownDelay > 0 ? styles.ibActive : ""}
+						className={countdownDelay > 0 ? "text-accent" : ""}
 					>
 						<TimerIcon size={18} />
 					</Button>
 				}
 			/>
 
-			<button
+			<Button
 				type="button"
-				className={`${styles.recBtn} ${styles.electronNoDrag}`}
+				variant="destructive"
+				size="icon"
+				className={styles.electronNoDrag}
 				onClick={
 					hasSelectedSource || platform === "linux"
 						? toggleRecording
@@ -360,7 +362,7 @@ function LaunchWindowContent() {
 				title={t("recording.record")}
 			>
 				<div className={styles.recDot} />
-			</button>
+			</Button>
 
 			<Separator orientation="vertical" className="mx-[5px] h-6" />
 
@@ -368,7 +370,14 @@ function LaunchWindowContent() {
 				<ProjectPopover
 					entries={projectLibraryEntries}
 					onOpenProject={openProjectFromLibrary}
-					trigger={<div className="absolute inset-0 pointer-events-none opacity-0" />}
+					trigger={
+						<Button
+							aria-hidden="true"
+							tabIndex={-1}
+							variant="ghost"
+							className="absolute size-px min-w-0 p-0 pointer-events-none opacity-0"
+						/>
+					}
 				/>
 			</div>
 

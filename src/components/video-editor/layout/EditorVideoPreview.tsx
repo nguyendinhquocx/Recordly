@@ -21,7 +21,7 @@ type Props = {
 	videoPath: string | null;
 	previewVersion: number;
 	aspectRatio: AspectRatio;
-	playbackRef: RefObject<VideoPlaybackRef>;
+	playbackRef: RefObject<VideoPlaybackRef | null>;
 	currentTime: number;
 	isPlaying: boolean;
 	previewVolume: number;
@@ -36,7 +36,7 @@ type Props = {
 	setIsPreviewReady: Dispatch<SetStateAction<boolean>>;
 	setCurrentTime: Dispatch<SetStateAction<number>>;
 	setIsPlaying: Dispatch<SetStateAction<boolean>>;
-	setError: Dispatch<SetStateAction<string | null>>;
+	setError: (message: string | null) => void;
 	handlers: Handlers;
 };
 

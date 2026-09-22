@@ -446,6 +446,14 @@ ipcMain.handle("set-hud-overlay-capture-protection", (_event, enabled: boolean) 
 	};
 });
 
+const editorWindows = new Set<BrowserWindow>();
+function notifyEditorMode() {
+	if (hudOverlayWindow && !hudOverlayWindow.webContents.isDestroyed()) {
+		hudOverlayWindow.webContents.send("editor-mode-changed", editorWindows.size > 0);
+	}
+}
+ipcMain.handle("get-editor-mode", () => editorWindows.size > 0);
+
 export function createHudOverlayWindow(): BrowserWindow {
 	const perfStart = Date.now();
 	loadHudOverlayCaptureProtectionSetting();
@@ -919,7 +927,7 @@ export function createEditorWindow(): BrowserWindow {
 		}),
 		...(isMac && {
 			titleBarStyle: "hiddenInset",
-			trafficLightPosition: { x: 12, y: 12 },
+			trafficLightPosition: { x: 16, y: 20 },
 		}),
 		autoHideMenuBar: !isMac,
 		transparent: false,
@@ -937,6 +945,24 @@ export function createEditorWindow(): BrowserWindow {
 			backgroundThrottling: false,
 		},
 	});
+
+	editorWindows.add(win);
+	notifyEditorMode();
+	win.once("closed", () => {
+		editorWindows.delete(win);
+		notifyEditorMode();
+	});
+
+	const publishWindowChrome = () => {
+		if (!win.isDestroyed())
+			win.webContents.send("window-chrome-changed", {
+				trafficLightsVisible: isMac && !win.isFullScreen() && !win.isSimpleFullScreen(),
+			});
+	};
+	win.on("enter-full-screen", publishWindowChrome);
+	win.on("leave-full-screen", publishWindowChrome);
+	win.on("resize", publishWindowChrome);
+	win.webContents.on("did-finish-load", publishWindowChrome);
 
 	win.once("ready-to-show", () => {
 		console.log(`[PERF:MAIN] Editor Window: ready-to-show in ${Date.now() - perfStart}ms`);
@@ -971,6 +997,14 @@ export function createEditorWindow(): BrowserWindow {
 
 	win.on("focus", () => {
 		console.log("[editor-window] focus");
+	});
+
+	win.on("enter-full-screen", () => {
+		if (!win.isDestroyed()) win.webContents.send("window-fullscreen-changed", true);
+	});
+
+	win.on("leave-full-screen", () => {
+		if (!win.isDestroyed()) win.webContents.send("window-fullscreen-changed", false);
 	});
 
 	if (VITE_DEV_SERVER_URL) {

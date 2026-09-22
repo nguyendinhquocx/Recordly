@@ -1,3 +1,6 @@
+import { getRecordingThumbnail } from "../recording/thumbnail";
+import { listRecordings, setRecordingsRemoved } from "../recording/library";
+import { importRecording, discardRecordingImport } from "../recording/importRecording";
 import { randomUUID } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
@@ -211,6 +214,108 @@ async function ensureNamedProjectSaveDoesNotOverwriteDifferentProject(
 }
 
 export function registerProjectHandlers() {
+	const imports = new Map<number, AbortController>();
+	const pendingImports = new Map<number, Set<string>>();
+	const watchedImportSenders = new WeakSet<Electron.WebContents>();
+	const abandonImports = (owner: number) => {
+		imports.get(owner)?.abort();
+		const outputs = pendingImports.get(owner);
+		pendingImports.delete(owner);
+		void Promise.allSettled([...(outputs ?? [])].map(discardRecordingImport)).then(
+			(results) => {
+				for (const result of results)
+					if (result.status === "rejected")
+						console.warn("Could not discard abandoned import", result.reason);
+			},
+		);
+	};
+	ipcMain.handle("finish-recording-import", async (event, keepPath: string, commit = false) => {
+		if (imports.has(event.sender.id))
+			return { success: false, error: "Import is still running" };
+		const outputs = pendingImports.get(event.sender.id);
+		// Commit only after the renderer confirms that its project is still active.
+		if (commit) outputs?.delete(keepPath);
+		try {
+			for (const output of outputs ?? []) {
+				if (output === keepPath) continue;
+				await discardRecordingImport(output);
+				outputs?.delete(output);
+			}
+			if (!outputs?.size) pendingImports.delete(event.sender.id);
+			return { success: true };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
+	ipcMain.handle("cancel-recording-import", (event) => {
+		imports.get(event.sender.id)?.abort();
+		return { success: true };
+	});
+	ipcMain.handle("get-recording-thumbnail", async (_, file: string) => {
+		try {
+			return { success: true, value: await getRecordingThumbnail(file) };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
+	ipcMain.handle("list-recordings", async () => {
+		try {
+			return { success: true, value: await listRecordings() };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
+	ipcMain.handle("set-recordings-removed", async (_, paths: string[], removed: boolean) => {
+		try {
+			await setRecordingsRemoved(paths, removed);
+			return { success: true, value: null };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
+	ipcMain.handle(
+		"import-recording",
+		async (
+			event,
+			currentPath: string,
+			recordingPath: string,
+			webcam?: import("../../../src/types/recordingLibrary").RecordingWebcamSource,
+		) => {
+			const owner = event.sender.id;
+			if (!watchedImportSenders.has(event.sender)) {
+				watchedImportSenders.add(event.sender);
+				event.sender.once("destroyed", () => abandonImports(owner));
+				event.sender.on("render-process-gone", () => abandonImports(owner));
+				event.sender.on("did-start-navigation", (_event, _url, isInPlace, isMainFrame) => {
+					if (isMainFrame && !isInPlace) abandonImports(owner);
+				});
+			}
+			if (imports.has(owner))
+				return { success: false, error: "An import is already running" };
+			const controller = new AbortController();
+			imports.set(owner, controller);
+			try {
+				const value = await importRecording(
+					currentPath,
+					recordingPath,
+					webcam,
+					controller.signal,
+				);
+				if (controller.signal.aborted || event.sender.isDestroyed()) {
+					await discardRecordingImport(value.path);
+					throw new Error("Import cancelled because its editor closed or reloaded");
+				}
+				const outputs = pendingImports.get(owner) ?? new Set<string>();
+				outputs.add(value.path);
+				pendingImports.set(owner, outputs);
+				return { success: true, value };
+			} catch (error) {
+				return { success: false, error: String(error) };
+			} finally {
+				imports.delete(owner);
+			}
+		},
+	);
 	ipcMain.handle("reveal-in-folder", async (_, filePath: string) => {
 		try {
 			// shell.showItemInFolder doesn't return a value, it throws on error

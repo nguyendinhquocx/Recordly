@@ -1,8 +1,14 @@
-import type { Span } from "dnd-timeline";
+import type { ClipSequenceSpan } from "../timeline/core/timelineTypes";
 import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { changeClipSpan } from "../clipSpanChange";
-import { planClipSpeedChange } from "../clipSpeedChange";
+import {
+	packClipSequence,
+	reorderClipSequence,
+	rippleRegionAnchors,
+	rippleRegions,
+} from "../clipSequence";
+import { getClipSourceStartMs, type AnnotationRegion, type AudioRegion } from "../types";
 import { planClipSplit } from "../clipSplit";
 import type { ClipRegion, EditorEffectSection, ZoomRegion } from "../types";
 import { supportsPreviewPlaybackRate } from "../videoPlayback/playbackRate";
@@ -14,6 +20,8 @@ type Translator = (
 ) => string;
 
 interface UseClipRegionCommandsParams {
+	setAnnotationRegions: Dispatch<SetStateAction<AnnotationRegion[]>>;
+	setAudioRegions: Dispatch<SetStateAction<AudioRegion[]>>;
 	sourceDurationMs: number;
 	clipRegions: ClipRegion[];
 	setClipRegions: Dispatch<SetStateAction<ClipRegion[]>>;
@@ -31,10 +39,11 @@ interface UseClipRegionCommandsParams {
 }
 
 export function useClipRegionCommands({
+	setAnnotationRegions,
+	setAudioRegions,
 	sourceDurationMs,
 	clipRegions,
 	setClipRegions,
-	zoomRegions,
 	setZoomRegions,
 	selectedClipId,
 	setSelectedClipId,
@@ -46,6 +55,17 @@ export function useClipRegionCommands({
 	nextClipIdRef,
 	t,
 }: UseClipRegionCommandsParams) {
+	const applySequence = useCallback(
+		(edited: ClipRegion[]) => {
+			const next = packClipSequence(edited);
+			setClipRegions(next);
+			setZoomRegions((current) => rippleRegions(current, clipRegions, next));
+			setAnnotationRegions((current) => rippleRegions(current, clipRegions, next));
+			setAudioRegions((current) => rippleRegionAnchors(current, clipRegions, next));
+		},
+		[clipRegions, setClipRegions, setZoomRegions, setAnnotationRegions, setAudioRegions],
+	);
+
 	const handleSelectClip = useCallback(
 		(id: string | null) => {
 			setSelectedClipId(id);
@@ -88,37 +108,25 @@ export function useClipRegionCommands({
 	);
 
 	const handleClipSpanChange = useCallback(
-		(id: string, span: Span) => {
+		(id: string, span: ClipSequenceSpan) => {
 			const oldClip = clipRegions.find((clip) => clip.id === id);
 			const newStart = Math.round(span.start);
 			const newEnd = Math.round(span.end);
 
-			if (oldClip) {
-				const startDelta = newStart - oldClip.startMs;
-				const endDelta = newEnd - oldClip.endMs;
-				if (Math.abs(startDelta - endDelta) < 1 && Math.abs(startDelta) > 0) {
-					setZoomRegions((current) =>
-						current.map((zoom) =>
-							zoom.startMs < oldClip.endMs && zoom.endMs > oldClip.startMs
-								? {
-										...zoom,
-										startMs: zoom.startMs + startDelta,
-										endMs: zoom.endMs + startDelta,
-									}
-								: zoom,
-						),
-					);
-				}
+			if (!oldClip) return;
+			if (span.sequenceIndex !== undefined) {
+				applySequence(reorderClipSequence(clipRegions, id, span.sequenceIndex));
+				return;
 			}
-
-			setClipRegions((current) =>
-				current.map((clip) => {
-					if (clip.id !== id) return clip;
-					return changeClipSpan(clip, newStart, newEnd, sourceDurationMs);
-				}),
+			applySequence(
+				clipRegions.map((clip) =>
+					clip.id === id
+						? changeClipSpan(clip, newStart, newEnd, sourceDurationMs)
+						: clip,
+				),
 			);
 		},
-		[clipRegions, setClipRegions, setZoomRegions, sourceDurationMs],
+		[clipRegions, applySequence, sourceDurationMs],
 	);
 
 	const handleClipSpeedChange = useCallback(
@@ -133,26 +141,28 @@ export function useClipRegionCommands({
 				);
 				return;
 			}
-			const plan = planClipSpeedChange({ clipRegions, zoomRegions, selectedClipId, speed });
-			if (!plan) return;
-			if ("blockedReason" in plan) {
-				toast.warning(
-					plan.blockedReason === "clip-overlap"
-						? t(
-								"editor.timeline.speedClipOverlap",
-								"Speed change would overlap the next clip. Move or split clips before slowing this section.",
-							)
-						: t(
-								"editor.timeline.speedZoomOverlap",
-								"Speed change would overlap another zoom. Move or delete the overlapping zoom first.",
-							),
-				);
-				return;
-			}
-			setClipRegions(plan.clipRegions);
-			setZoomRegions(plan.zoomRegions);
+
+			applySequence(
+				clipRegions.map((clip) =>
+					clip.id === selectedClipId
+						? {
+								...clip,
+								sourceStartMs: getClipSourceStartMs(clip),
+								speed,
+								endMs:
+									clip.startMs +
+									Math.max(
+										1,
+										Math.round(
+											((clip.endMs - clip.startMs) * clip.speed) / speed,
+										),
+									),
+							}
+						: clip,
+				),
+			);
 		},
-		[clipRegions, selectedClipId, setClipRegions, setZoomRegions, t, zoomRegions],
+		[clipRegions, selectedClipId, applySequence, t],
 	);
 
 	const handleClipMutedChange = useCallback(
@@ -178,11 +188,10 @@ export function useClipRegionCommands({
 
 	const handleClipDelete = useCallback(
 		(id: string) => {
-			// Other tracks have their own timeline positions; deleting footage is not a ripple edit.
-			setClipRegions((current) => current.filter((clip) => clip.id !== id));
+			applySequence(clipRegions.filter((clip) => clip.id !== id));
 			if (selectedClipId === id) setSelectedClipId(null);
 		},
-		[selectedClipId, setClipRegions, setSelectedClipId],
+		[clipRegions, selectedClipId, applySequence, setSelectedClipId],
 	);
 
 	return {

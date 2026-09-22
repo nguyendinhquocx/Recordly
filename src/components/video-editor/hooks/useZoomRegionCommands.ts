@@ -11,6 +11,7 @@ import {
 } from "../types";
 
 interface UseZoomRegionCommandsParams {
+	setSelectedClipId: Dispatch<SetStateAction<string | null>>;
 	videoPath: string | null;
 	setZoomRegions: Dispatch<SetStateAction<ZoomRegion[]>>;
 	selectedZoomId: string | null;
@@ -25,6 +26,7 @@ interface UseZoomRegionCommandsParams {
 }
 
 export function useZoomRegionCommands({
+	setSelectedClipId,
 	videoPath,
 	setZoomRegions,
 	selectedZoomId,
@@ -43,6 +45,7 @@ export function useZoomRegionCommands({
 			if (id) {
 				setActiveEffectSection("zoom");
 				setSelectedAnnotationId(null);
+				setSelectedClipId(null);
 				setSelectedAudioId(null);
 				setSelectedCaptionId(null);
 			} else {
@@ -52,6 +55,7 @@ export function useZoomRegionCommands({
 		[
 			setActiveEffectSection,
 			setSelectedAnnotationId,
+			setSelectedClipId,
 			setSelectedAudioId,
 			setSelectedCaptionId,
 			setSelectedZoomId,
@@ -82,12 +86,14 @@ export function useZoomRegionCommands({
 			setZoomRegions((current) => [...current, newRegion]);
 			setSelectedZoomId(id);
 			setSelectedAnnotationId(null);
+			setSelectedClipId(null);
 			setSelectedCaptionId(null);
 		},
 		[
 			markFreshRecordingSuggestion,
 			nextZoomIdRef,
 			setSelectedAnnotationId,
+			setSelectedClipId,
 			setSelectedCaptionId,
 			setSelectedZoomId,
 			setZoomRegions,
