@@ -1,5 +1,5 @@
 import { TextArea, Input } from "@/components/ui/input";
-import { ArrowsMerge, Scissors, Trash } from "@phosphor-icons/react";
+import { ArrowsMerge, Scissors, Trash } from "@/components/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useScopedT } from "@/contexts/I18nContext";

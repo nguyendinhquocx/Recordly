@@ -1,5 +1,5 @@
 import { Card } from "@heroui/react";
-import { PuzzlePiece } from "@phosphor-icons/react";
+import { PuzzlePiece } from "@/components/ui/icons";
 
 export default function ExtensionManager() {
 	return (

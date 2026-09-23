@@ -1,4 +1,4 @@
-import { BookmarkSimple, CaretDown, Check, X } from "@phosphor-icons/react";
+import { BookmarkSimple, CaretDown, Check, X } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

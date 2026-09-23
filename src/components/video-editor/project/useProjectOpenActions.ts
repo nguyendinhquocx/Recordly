@@ -6,6 +6,7 @@ import {
 	useCallback,
 	useEffect,
 } from "react";
+import type { useProjectSaveActions } from "./useProjectSaveActions";
 import { toast } from "@/components/ui/toast";
 import { fromFileUrl, resolveVideoUrl } from "../projectPersistence";
 import type { useAppearanceState } from "../state/useAppearanceState";
@@ -26,7 +27,7 @@ type UseProjectOpenActionsInput = {
 	setDuration: Set<number>;
 	applyLoadedProject: (candidate: unknown, path?: string | null) => Promise<boolean>;
 	openUnsavedChangesDialog: (actionLabel: string) => Promise<"save" | "discard" | "cancel">;
-	saveProject: (forceSaveAs: boolean) => Promise<boolean>;
+	saveProject: ReturnType<typeof useProjectSaveActions>["saveProject"];
 	refreshProjectLibrary: () => Promise<void>;
 	resetSourceScopedEditorState: () => void;
 	applySessionPresentation: (session: null) => void;
@@ -79,7 +80,7 @@ export function useProjectOpenActions({
 				}
 				project.setProjectBrowserOpen(false);
 				await refreshProjectLibrary();
-				toast.success(`Project loaded from ${result.path}`);
+				return true;
 			} catch (error) {
 				project.setError(
 					`Could not load project: ${error instanceof Error ? error.message : String(error)}`,
@@ -172,14 +173,39 @@ export function useProjectOpenActions({
 		refreshProjectLibrary,
 	]);
 
-	const handleOpenProjectBrowser = useCallback(() => {
+	const handleOpenProjectBrowser = useCallback(async () => {
 		if (project.projectBrowserOpen) {
 			project.setProjectBrowserOpen(false);
 			return;
 		}
+		videoPlaybackRef.current?.pause();
+		setIsPlaying(false);
+		if (project.videoPath && !project.error) {
+			await saveProject(false, { remountPreviewAfterSave: false });
+		}
 		project.setProjectBrowserOpen(true);
 		void refreshProjectLibrary();
-	}, [project.projectBrowserOpen, project.setProjectBrowserOpen, refreshProjectLibrary]);
+	}, [
+		project.projectBrowserOpen,
+		project.setProjectBrowserOpen,
+		refreshProjectLibrary,
+		videoPlaybackRef,
+		setIsPlaying,
+		saveProject,
+		project.videoPath,
+		project.error,
+	]);
+
+	useEffect(() => {
+		const openRequestedDashboard = () => {
+			if (!localStorage.getItem("recordly.open-dashboard")) return;
+			localStorage.removeItem("recordly.open-dashboard");
+			if (!project.projectBrowserOpen) void handleOpenProjectBrowser();
+		};
+		openRequestedDashboard();
+		window.addEventListener("storage", openRequestedDashboard);
+		return () => window.removeEventListener("storage", openRequestedDashboard);
+	}, [handleOpenProjectBrowser, project.projectBrowserOpen]);
 
 	useEffect(() => {
 		const removeLoad = window.electronAPI.onMenuLoadProject(
@@ -194,5 +220,36 @@ export function useProjectOpenActions({
 		};
 	}, [handleOpenProjectBrowser, handleSaveProject, handleSaveProjectAs]);
 
-	return { handleOpenProjectFromLibrary, handleImportMediaOrProject, handleOpenProjectBrowser };
+	const handleDeleteProjects = useCallback(
+		async (paths: string[]) => {
+			const result = await window.electronAPI.trashProjectFiles(paths);
+			if (project.currentProjectPath && result.deleted.includes(project.currentProjectPath)) {
+				project.setCurrentProjectPath(null);
+				project.setLastSavedSnapshot(null);
+			}
+			await refreshProjectLibrary();
+			if (result.errors.length) toast.error(result.errors.join("\n"));
+			return result.deleted;
+		},
+		[project, refreshProjectLibrary],
+	);
+	const handleRenameLibraryProject = useCallback(
+		async (path: string, name: string) => {
+			const result = await window.electronAPI.renameLibraryProject(path, name);
+			if (!result.success || !result.path)
+				throw new Error(result.error || "Could not rename project");
+			if (project.currentProjectPath === path) project.setCurrentProjectPath(result.path);
+			await refreshProjectLibrary();
+			return result.path;
+		},
+		[project, refreshProjectLibrary],
+	);
+
+	return {
+		handleRenameLibraryProject,
+		handleOpenProjectFromLibrary,
+		handleImportMediaOrProject,
+		handleOpenProjectBrowser,
+		handleDeleteProjects,
+	};
 }

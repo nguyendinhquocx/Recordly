@@ -2273,6 +2273,11 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				await stopWebcamRecorder();
 			}
 		} finally {
+			try {
+				await window.electronAPI.finishRecordingStartup();
+			} catch (error) {
+				console.warn("Failed to release recording startup protection:", error);
+			}
 			setHudSourceSelectionActive(false);
 			startInFlight.current = false;
 			setStarting(false);

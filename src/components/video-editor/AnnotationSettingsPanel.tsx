@@ -14,7 +14,7 @@ import {
 	TextT as Type,
 	TextUnderline as Underline,
 	UploadSimple as Upload,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { ColorControl, ColorPalette } from "@/components/ui/color-picker";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";

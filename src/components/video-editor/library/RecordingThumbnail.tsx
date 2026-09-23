@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FilmStrip } from "@phosphor-icons/react";
+import { FilmStrip } from "@/components/ui/icons";
 import type { RecordingLibraryEntry } from "@/types/recordingLibrary";
 
 export function RecordingThumbnail({ entry }: { entry: RecordingLibraryEntry }) {

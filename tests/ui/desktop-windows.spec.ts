@@ -30,6 +30,7 @@ test("editor inspector and playback controls fit a smaller desktop", async ({ pa
 	await expect(page.getByRole("button", { name: "Export", exact: true })).toBeInViewport();
 	await expect(page.getByRole("button", { name: "Play", exact: true })).toBeInViewport();
 	await page.getByRole("radio", { name: "Settings", exact: true }).click();
+	await page.getByRole("row", { name: "Motion", exact: true }).click();
 	await expect(
 		page.getByRole("radiogroup", { name: "Motion Presets", exact: true }),
 	).toBeVisible();

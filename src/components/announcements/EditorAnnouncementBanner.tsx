@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowSquareOut, X } from "@phosphor-icons/react";
+import { ArrowRight, ArrowSquareOut, X } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";

@@ -1,5 +1,5 @@
 import { Button, ToggleButton } from "@heroui/react";
-import { Check, Plus, X } from "@phosphor-icons/react";
+import { Check, Plus, X } from "@/components/ui/icons";
 import { useEffect, useState } from "react";
 import { getRenderableVideoUrl } from "@/lib/assetPath";
 import { isVideoWallpaperSource } from "@/lib/wallpapers";

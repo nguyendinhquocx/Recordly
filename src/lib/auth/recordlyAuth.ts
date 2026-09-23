@@ -1,3 +1,4 @@
+import { demoLoginEnabled, demoUser, hasDemoSession, setDemoSession } from "./demoSession";
 import { createClient, type Provider, type User } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
@@ -29,6 +30,11 @@ function requireAuth() {
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<User> {
+	if (demoLoginEnabled && email.toLowerCase() === "test@email.com") {
+		if (password !== "1234") throw new Error("Incorrect email or password.");
+		setDemoSession(true);
+		return demoUser;
+	}
 	const client = requireAuth();
 	const { data, error } = await client.auth.signInWithPassword({ email, password });
 	if (error) throw error;
@@ -48,11 +54,15 @@ async function openAuthUrl(url: string | null) {
 	if (!result.success) throw new Error(result.error || "Could not open the sign-in page.");
 }
 
-export async function signInWithSocial(provider: "google" | "twitter"): Promise<void> {
+export async function signInWithSocial(provider: "google" | "azure"): Promise<void> {
 	const client = requireAuth();
 	const { data, error } = await client.auth.signInWithOAuth({
 		provider: provider as Provider,
-		options: { redirectTo: callbackUrl, skipBrowserRedirect: true },
+		options: {
+			redirectTo: callbackUrl,
+			skipBrowserRedirect: true,
+			scopes: provider === "azure" ? "email" : undefined,
+		},
 	});
 	if (error) throw error;
 	await openAuthUrl(data.url);
@@ -82,6 +92,10 @@ async function exchangeAuthCallback(url: string): Promise<void> {
 }
 
 export async function signOutRecordly(): Promise<void> {
+	if (hasDemoSession()) {
+		setDemoSession(false);
+		return;
+	}
 	const client = requireAuth();
 	const { error } = await client.auth.signOut();
 	if (error) throw error;

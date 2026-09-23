@@ -958,6 +958,8 @@ final class RecorderService {
 	private let queue = DispatchQueue(label: "recordly.screencapturekit.commands")
 	private let completionGroup = DispatchGroup()
 	private var succeeded = true
+	// Accessed only by serialized command operations.
+	private var captureStarted = false
 
 	private func enqueue(_ operation: @escaping () async -> Void) {
 		queue.async {
@@ -975,6 +977,7 @@ final class RecorderService {
 		enqueue {
 			do {
 				try await self.recorder.startCapture(configJSON: configJSON)
+				self.captureStarted = true
 			} catch {
 				self.succeeded = false
 				fputs("Error starting capture: \(error.localizedDescription)\n", stderr)
@@ -986,6 +989,9 @@ final class RecorderService {
 
 	func stop() {
 		enqueue {
+			// Failed startup already releases completionGroup. EOF must not do it again.
+			guard self.captureStarted else { return }
+			self.captureStarted = false
 			do {
 				let outputPath = try await self.recorder.stopCapture()
 				print("Recording stopped. Output path: \(outputPath)")
@@ -1086,10 +1092,12 @@ DispatchQueue.global(qos: .utility).async {
 		}
 
 		if input == "stop" {
-			service.stop()
 			break
 		}
 	}
+	// EOF means the Electron parent exited or restarted. Finalize and release
+	// capture devices just as we do for an explicit stop command.
+	service.stop()
 }
 
 if !service.waitUntilFinished() {

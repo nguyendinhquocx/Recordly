@@ -1,7 +1,8 @@
+import { SettingsSections, SettingsCategory } from "./SettingsSections";
 import { Card, RadioGroup, Radio, Label, Description } from "@heroui/react";
 import { ProgressBar } from "@heroui/react";
 import { ColorControl, ColorPalette } from "@/components/ui/color-picker";
-import { Palette, Trash as Trash2, UploadSimple as Upload } from "@phosphor-icons/react";
+import { Palette, Trash as Trash2, UploadSimple as Upload } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
@@ -41,7 +42,8 @@ import { loadEditorPreferences, saveEditorPreferences } from "./editorPreference
 import { getDefaultBorderRadiusPercent } from "./projectPersistence";
 import { SliderControl } from "./SliderControl";
 import { WallpaperGrid } from "./WallpaperGrid";
-import { KeyboardShortcutsDialog } from "./TutorialHelp";
+import { useShortcuts } from "@/contexts/ShortcutsContext";
+import { SettingsRow } from "./SettingsRow";
 import type {
 	AnnotationRegion,
 	AnnotationType,
@@ -231,18 +233,26 @@ function MotionPresetCards({
 			value={activePresetId ?? undefined}
 			onChange={(value) => onApply(value as CursorMotionPresetId)}
 		>
-			<Label className="text-xs font-medium">{title}</Label>
+			<Label className="text-[13px] font-medium">{title}</Label>
 			{MOTION_PRESET_ORDER.map((presetId) => (
-				<Radio key={presetId} value={presetId}>
+				<Radio
+					key={presetId}
+					value={presetId}
+					className="rounded-xl border border-separator p-3"
+				>
 					<Radio.Content>
 						<Radio.Control>
 							<Radio.Indicator />
 						</Radio.Control>
-						<Label>{tSettings(`effects.motionPresets.${presetId}.label`)}</Label>
+						<div className="flex min-w-0 flex-col gap-1">
+							<Label className="text-[13px] font-medium">
+								{tSettings(`effects.motionPresets.${presetId}.label`)}
+							</Label>
+							<Description className="text-xs leading-relaxed">
+								{tSettings(`effects.motionPresets.${presetId}.description`)}
+							</Description>
+						</div>
 					</Radio.Content>
-					<Description>
-						{tSettings(`effects.motionPresets.${presetId}.description`)}
-					</Description>
 				</Radio>
 			))}
 		</RadioGroup>
@@ -1003,6 +1013,7 @@ export function SettingsPanel({
 	);
 	const [experimentalUpdatesEnabled, setExperimentalUpdatesEnabled] = useState(false);
 	const [savingExperimentalUpdates, setSavingExperimentalUpdates] = useState(false);
+	const { openConfig: openShortcutsConfig } = useShortcuts();
 	const [internalActiveEffectSection] = useState<EditorEffectSection>("scene");
 	const activeEffectSection = activeEffectSectionProp ?? internalActiveEffectSection;
 	const removeBackgroundStateRef = useRef<{
@@ -1792,7 +1803,7 @@ export function SettingsPanel({
 					style={{ scrollbarGutter: "stable" }}
 				>
 					<div className="mb-4 flex items-center gap-2">
-						<Palette className="w-4 h-4 text-[#2563EB]" />
+						<Palette className="w-4 h-4 text-accent" />
 						<span className="text-sm font-medium text-foreground">
 							{tSettings("background.title")}
 						</span>
@@ -2120,7 +2131,7 @@ export function SettingsPanel({
 				{whisperModelDownloadStatus === "downloading" ? (
 					<div className="h-2 overflow-hidden rounded-full bg-foreground/5">
 						<div
-							className="h-full rounded-full bg-[#2196f3] transition-all"
+							className="h-full rounded-full bg-accent transition-all"
 							style={{ width: `${whisperModelDownloadProgress}%` }}
 						/>
 					</div>
@@ -2236,301 +2247,310 @@ export function SettingsPanel({
 
 	const effectSectionContent = (() => {
 		const settingsSectionContent = (
-			<div className="space-y-5">
-				<section className="flex flex-col gap-4">
-					<SectionLabel>{t("editor.theme.appearance", "Appearance")}</SectionLabel>
-					<ChoiceGroup
-						type="single"
-						aria-label={t("editor.theme.appearance", "Appearance")}
-						value={themePreference}
-						onValueChange={(value) => {
-							if (value === "light" || value === "dark" || value === "system")
-								setThemePreference(value);
-						}}
-						fullWidth
-						size="sm"
-					>
-						<ChoiceItem value="light" className="flex-1">
-							{t("editor.theme.light", "Light")}
-						</ChoiceItem>
-						<ChoiceItem value="dark" className="flex-1">
-							{t("editor.theme.dark", "Dark")}
-						</ChoiceItem>
-						<ChoiceItem value="system" className="flex-1">
-							{t("editor.theme.system", "System")}
-						</ChoiceItem>
-					</ChoiceGroup>
-				</section>
+			<SettingsSections
+				categories={advanced ? ["general", "motion", "advanced"] : ["general", "motion"]}
+			>
+				<SettingsCategory category="general">
+					<SettingsRow title={t("editor.theme.appearance", "Appearance")} stacked>
+						<ChoiceGroup
+							type="single"
+							aria-label={t("editor.theme.appearance", "Appearance")}
+							value={themePreference}
+							onValueChange={(value) => {
+								if (value === "light" || value === "dark" || value === "system")
+									setThemePreference(value);
+							}}
+							fullWidth
+							size="sm"
+						>
+							<ChoiceItem value="light" className="flex-1">
+								{t("editor.theme.light", "Light")}
+							</ChoiceItem>
+							<ChoiceItem value="dark" className="flex-1">
+								{t("editor.theme.dark", "Dark")}
+							</ChoiceItem>
+							<ChoiceItem value="system" className="flex-1">
+								{t("editor.theme.system", "System")}
+							</ChoiceItem>
+						</ChoiceGroup>
+					</SettingsRow>
 
-				<section className="flex flex-col gap-4">
-					<SectionLabel>{t("common.app.language", "Language")}</SectionLabel>
-					<Select value={locale} onValueChange={(value) => setLocale(value as AppLocale)}>
-						<SelectTrigger className="h-9 w-full text-sm">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{SUPPORTED_LOCALES.map((candidateLocale) => (
-								<SelectItem key={candidateLocale} value={candidateLocale}>
-									{APP_LANGUAGE_LABELS[candidateLocale]}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</section>
-
-				{advanced && (
-					<section className="flex flex-col gap-4">
-						<SectionLabel>{tSettings("updates.title", "Updates")}</SectionLabel>
-						<div className="flex items-center justify-between gap-3 py-2">
-							<div>
-								<div className="text-sm font-medium text-foreground">
-									{tSettings("updates.experimental", "Experimental updates")}
-								</div>
-								<div className="mt-0.5 text-xs text-muted-foreground/70">
-									{tSettings(
-										"updates.experimentalDescription",
-										"This is the front line of user testing - highly experimental so expect bugs",
+					<SettingsRow title={t("common.app.language", "Language")} stacked>
+						<Select
+							value={locale}
+							onValueChange={(value) => setLocale(value as AppLocale)}
+						>
+							<SelectTrigger className="h-9 w-full text-sm">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{SUPPORTED_LOCALES.map((candidateLocale) => (
+									<SelectItem key={candidateLocale} value={candidateLocale}>
+										{APP_LANGUAGE_LABELS[candidateLocale]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</SettingsRow>
+				</SettingsCategory>
+				<SettingsCategory category="advanced">
+					{advanced && (
+						<section className="flex flex-col gap-4">
+							<SectionLabel>{tSettings("updates.title", "Updates")}</SectionLabel>
+							<SettingsRow
+								title={tSettings("updates.experimental", "Experimental updates")}
+								description={tSettings(
+									"updates.experimentalDescription",
+									"This is the front line of user testing - highly experimental so expect bugs",
+								)}
+							>
+								<Switch
+									checked={experimentalUpdatesEnabled}
+									disabled={savingExperimentalUpdates}
+									onCheckedChange={(enabled) =>
+										void updateExperimentalUpdatesPreference(enabled)
+									}
+									aria-label={tSettings(
+										"updates.experimental",
+										"Experimental updates",
 									)}
-								</div>
-							</div>
-							<Switch
-								checked={experimentalUpdatesEnabled}
-								disabled={savingExperimentalUpdates}
-								onCheckedChange={(enabled) =>
-									void updateExperimentalUpdatesPreference(enabled)
-								}
-								aria-label={tSettings(
-									"updates.experimental",
-									"Experimental updates",
-								)}
-							/>
-						</div>
-					</section>
-				)}
-
-				<section className="flex flex-col gap-3">
-					<div className="flex items-center justify-between gap-3 py-2">
-						<div>
-							<div className="text-sm font-medium text-foreground">
-								{tSettings(
-									"effects.autoApplyFreshRecordingZooms",
-									"Auto-apply fresh recording zooms",
-								)}
-							</div>
-							<div className="mt-0.5 text-xs text-muted-foreground/70">
-								{tSettings(
-									"effects.autoApplyFreshRecordingZoomsDescription",
-									"Suggest cursor-follow zooms automatically when you open a new recording.",
-								)}
-							</div>
-						</div>
-						<Switch
-							aria-label={tSettings(
+								/>
+							</SettingsRow>
+						</section>
+					)}
+				</SettingsCategory>
+				<SettingsCategory category="motion">
+					<section className="flex flex-col gap-6">
+						<SettingsRow
+							title={tSettings(
 								"effects.autoApplyFreshRecordingZooms",
 								"Auto-apply fresh recording zooms",
 							)}
-							checked={autoApplyFreshRecordingAutoZooms}
-							onCheckedChange={onAutoApplyFreshRecordingAutoZoomsChange}
-						/>
-					</div>
-					<div className="flex items-center justify-between gap-3 py-2">
-						<div>
-							<div className="text-sm font-medium text-foreground">
-								{tSettings("effects.connectZooms", "Connect neighboring zooms")}
-							</div>
-							<div className="mt-0.5 text-xs text-muted-foreground/70">
-								{tSettings(
-									"effects.connectZoomsDescription",
-									"Smooth consecutive zoom regions into a continuous camera move.",
-								)}
-							</div>
-						</div>
-						<Switch
-							aria-label={tSettings(
-								"effects.connectZooms",
-								"Connect neighboring zooms",
+							description={tSettings(
+								"effects.autoApplyFreshRecordingZoomsDescription",
+								"Suggest cursor-follow zooms automatically when you open a new recording.",
 							)}
-							checked={connectZooms}
-							onCheckedChange={onConnectZoomsChange}
+						>
+							<Switch
+								aria-label={tSettings(
+									"effects.autoApplyFreshRecordingZooms",
+									"Auto-apply fresh recording zooms",
+								)}
+								checked={autoApplyFreshRecordingAutoZooms}
+								onCheckedChange={onAutoApplyFreshRecordingAutoZoomsChange}
+							/>
+						</SettingsRow>
+						<SettingsRow
+							title={tSettings("effects.connectZooms", "Connect neighboring zooms")}
+							description={tSettings(
+								"effects.connectZoomsDescription",
+								"Smooth consecutive zoom regions into a continuous camera move.",
+							)}
+						>
+							<Switch
+								aria-label={tSettings(
+									"effects.connectZooms",
+									"Connect neighboring zooms",
+								)}
+								checked={connectZooms}
+								onCheckedChange={onConnectZoomsChange}
+							/>
+						</SettingsRow>
+					</section>
+
+					<section className="flex flex-col gap-4">
+						<MotionPresetCards
+							title={tSettings("effects.motionPresetsTitle", "Motion Presets")}
+							activePresetId={activeMotionPresetId}
+							onApply={applyMotionPreset}
+							tSettings={tSettings}
 						/>
-					</div>
-				</section>
+					</section>
+				</SettingsCategory>
+				<SettingsCategory category="general">
+					<SettingsRow title={t("editor.keyboardShortcuts.title")}>
+						<Button variant="secondary" size="sm" onClick={openShortcutsConfig}>
+							{t("editor.keyboardShortcuts.customize")}
+						</Button>
+					</SettingsRow>
+				</SettingsCategory>
+				<SettingsCategory category="advanced">
+					{advanced && showDevMotionControls ? (
+						<section className="flex flex-col gap-4 rounded-xl border border-separator bg-surface-secondary p-3">
+							<div className="flex items-center justify-between gap-3">
+								<div>
+									<SectionLabel>
+										{tSettings("effects.devSection", "Dev")}
+									</SectionLabel>
+									<div className="mt-0.5 text-xs text-muted-foreground">
+										{tSettings(
+											"effects.devSectionHint",
+											"Temporary testing controls for native capture and motion tuning.",
+										)}
+									</div>
+								</div>
+								<span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-accent">
+									DEV
+								</span>
+							</div>
 
-				<section className="flex flex-col gap-4">
-					<MotionPresetCards
-						title={tSettings("effects.motionPresetsTitle", "Motion Presets")}
-						activePresetId={activeMotionPresetId}
-						onApply={applyMotionPreset}
-						tSettings={tSettings}
-					/>
-				</section>
-
-				<section className="flex flex-col gap-4">
-					<SectionLabel>{t("editor.keyboardShortcuts.title")}</SectionLabel>
-					<KeyboardShortcutsDialog
-						triggerLabel={t("editor.keyboardShortcuts.customize")}
-						triggerClassName="h-9 w-full justify-start rounded-xl border border-foreground/10 bg-foreground/5 px-3 text-sm text-foreground hover:bg-foreground/10 hover:text-foreground"
-					/>
-				</section>
-
-				{advanced && showDevMotionControls ? (
-					<section className="flex flex-col gap-4 rounded-xl border border-[#2563EB]/15 bg-[#2563EB]/5 p-3">
-						<div className="flex items-center justify-between gap-3">
-							<div>
-								<SectionLabel>
-									{tSettings("effects.devSection", "Dev")}
-								</SectionLabel>
-								<div className="mt-0.5 text-xs text-muted-foreground">
-									{tSettings(
-										"effects.devSectionHint",
-										"Temporary testing controls for native capture and motion tuning.",
-									)}
+							<div className="rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
+								<div className="flex items-start justify-between gap-3">
+									<div>
+										<div className="text-sm font-medium text-foreground">
+											{tSettings(
+												"effects.nativeCaptureWarningTester",
+												"Native capture warning",
+											)}
+										</div>
+										<div className="mt-0.5 text-xs text-muted-foreground">
+											{nativeCaptureUnavailableSession
+												? tSettings(
+														"effects.nativeCaptureWarningTesterUnavailable",
+														"This project is currently marked as native capture unavailable.",
+													)
+												: tSettings(
+														"effects.nativeCaptureWarningTesterAvailable",
+														"This project is not marked as unsupported, but you can still open the modal for UI testing.",
+													)}
+										</div>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => onOpenNativeCaptureUnavailableModal?.()}
+										className="h-8 shrink-0"
+									>
+										{tSettings(
+											"effects.openNativeCaptureWarning",
+											"Open warning",
+										)}
+									</Button>
 								</div>
 							</div>
-							<span className="rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wider text-[#2563EB]">
-								DEV
-							</span>
-						</div>
 
-						<div className="rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
-							<div className="flex items-start justify-between gap-3">
+							<div className="space-y-1.5 rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
 								<div>
 									<div className="text-sm font-medium text-foreground">
 										{tSettings(
-											"effects.nativeCaptureWarningTester",
-											"Native capture warning",
+											"effects.cameraDebugTuning",
+											"Camera Debug Tuning",
 										)}
 									</div>
 									<div className="mt-0.5 text-xs text-muted-foreground">
-										{nativeCaptureUnavailableSession
-											? tSettings(
-													"effects.nativeCaptureWarningTesterUnavailable",
-													"This project is currently marked as native capture unavailable.",
-												)
-											: tSettings(
-													"effects.nativeCaptureWarningTesterAvailable",
-													"This project is not marked as unsupported, but you can still open the modal for UI testing.",
-												)}
+										{tSettings(
+											"effects.cameraDebugTuningHint",
+											"Development-only spring tuning controls for camera motion.",
+										)}
 									</div>
 								</div>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => onOpenNativeCaptureUnavailableModal?.()}
-									className="h-8 shrink-0"
-								>
-									{tSettings("effects.openNativeCaptureWarning", "Open warning")}
-								</Button>
-							</div>
-						</div>
-
-						<div className="space-y-1.5 rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
-							<div>
-								<div className="text-sm font-medium text-foreground">
-									{tSettings("effects.cameraDebugTuning", "Camera Debug Tuning")}
-								</div>
-								<div className="mt-0.5 text-xs text-muted-foreground">
-									{tSettings(
-										"effects.cameraDebugTuningHint",
-										"Development-only spring tuning controls for camera motion.",
+								<SliderControl
+									label={tSettings(
+										"effects.cameraSpringStiffnessMultiplier",
+										"Camera stiffness",
 									)}
-								</div>
-							</div>
-							<SliderControl
-								label={tSettings(
-									"effects.cameraSpringStiffnessMultiplier",
-									"Camera stiffness",
-								)}
-								value={cameraSpringStiffnessMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) =>
-									onCameraSpringStiffnessMultiplierChange?.(value)
-								}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-							<SliderControl
-								label={tSettings(
-									"effects.cameraSpringDampingMultiplier",
-									"Camera damping",
-								)}
-								value={cameraSpringDampingMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) => onCameraSpringDampingMultiplierChange?.(value)}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-							<SliderControl
-								label={tSettings(
-									"effects.cameraSpringMassMultiplier",
-									"Camera mass",
-								)}
-								value={cameraSpringMassMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) => onCameraSpringMassMultiplierChange?.(value)}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-						</div>
-
-						<div className="space-y-1.5 rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
-							<div>
-								<div className="text-sm font-medium text-foreground">
-									{tSettings("effects.cursorDebugTuning", "Cursor Debug Tuning")}
-								</div>
-								<div className="mt-0.5 text-xs text-muted-foreground">
-									{tSettings(
-										"effects.cursorDebugTuningHint",
-										"Development-only spring tuning controls.",
+									value={cameraSpringStiffnessMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCameraSpringStiffnessMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
+								<SliderControl
+									label={tSettings(
+										"effects.cameraSpringDampingMultiplier",
+										"Camera damping",
 									)}
-								</div>
+									value={cameraSpringDampingMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCameraSpringDampingMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
+								<SliderControl
+									label={tSettings(
+										"effects.cameraSpringMassMultiplier",
+										"Camera mass",
+									)}
+									value={cameraSpringMassMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCameraSpringMassMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
 							</div>
-							<SliderControl
-								label={tSettings(
-									"effects.cursorSpringStiffnessMultiplier",
-									"Spring stiffness",
-								)}
-								value={cursorSpringStiffnessMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) =>
-									onCursorSpringStiffnessMultiplierChange?.(value)
-								}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-							<SliderControl
-								label={tSettings(
-									"effects.cursorSpringDampingMultiplier",
-									"Spring damping",
-								)}
-								value={cursorSpringDampingMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) => onCursorSpringDampingMultiplierChange?.(value)}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-							<SliderControl
-								label={tSettings(
-									"effects.cursorSpringMassMultiplier",
-									"Spring mass",
-								)}
-								value={cursorSpringMassMultiplier}
-								min={0.25}
-								max={3}
-								step={0.01}
-								onChange={(value) => onCursorSpringMassMultiplierChange?.(value)}
-								formatValue={(value) => `${value.toFixed(2)}×`}
-							/>
-						</div>
-					</section>
-				) : null}
-			</div>
+
+							<div className="space-y-1.5 rounded-lg border border-foreground/10 bg-background/60 px-3 py-3">
+								<div>
+									<div className="text-sm font-medium text-foreground">
+										{tSettings(
+											"effects.cursorDebugTuning",
+											"Cursor Debug Tuning",
+										)}
+									</div>
+									<div className="mt-0.5 text-xs text-muted-foreground">
+										{tSettings(
+											"effects.cursorDebugTuningHint",
+											"Development-only spring tuning controls.",
+										)}
+									</div>
+								</div>
+								<SliderControl
+									label={tSettings(
+										"effects.cursorSpringStiffnessMultiplier",
+										"Spring stiffness",
+									)}
+									value={cursorSpringStiffnessMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCursorSpringStiffnessMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
+								<SliderControl
+									label={tSettings(
+										"effects.cursorSpringDampingMultiplier",
+										"Spring damping",
+									)}
+									value={cursorSpringDampingMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCursorSpringDampingMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
+								<SliderControl
+									label={tSettings(
+										"effects.cursorSpringMassMultiplier",
+										"Spring mass",
+									)}
+									value={cursorSpringMassMultiplier}
+									min={0.25}
+									max={3}
+									step={0.01}
+									onChange={(value) =>
+										onCursorSpringMassMultiplierChange?.(value)
+									}
+									formatValue={(value) => `${value.toFixed(2)}×`}
+								/>
+							</div>
+						</section>
+					) : null}
+				</SettingsCategory>
+			</SettingsSections>
 		);
 
 		const sceneSectionContent = (

@@ -4,7 +4,7 @@ import {
 	CheckCircleIcon,
 	DownloadSimpleIcon,
 	WarningCircleIcon,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/contexts/I18nContext";

@@ -63,8 +63,10 @@ test("editor loads video, switches tools and edits export options", async ({ pag
 		fullPage: true,
 		animations: "disabled",
 	});
-	await page.getByRole("button", { name: "Open projects", exact: true }).click();
-	await expect(page.getByRole("dialog", { name: "Projects", exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Home", exact: true }).click();
+	await expect(
+		page.getByRole("dialog", { name: "Projects dashboard", exact: true }),
+	).toBeVisible();
 	await page.keyboard.press("Escape");
 	await page.getByRole("button", { name: "Crop Video", exact: true }).click();
 	await expect(page.getByRole("dialog", { name: "Crop Video", exact: true })).toBeVisible();
@@ -72,15 +74,7 @@ test("editor loads video, switches tools and edits export options", async ({ pag
 	await page.getByRole("button", { name: "16:9", exact: true }).click();
 	await page.getByRole("menuitem", { name: "1:1", exact: true }).click();
 	await expect(page.getByRole("button", { name: "1:1", exact: true })).toBeVisible();
-	await page.getByRole("button", { name: "Open presets", exact: true }).click();
-	await page
-		.getByRole("textbox", { name: "Preset name", exact: true })
-		.fill("HeroUI test preset");
-	await page.getByRole("button", { name: "Save", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "Delete preset HeroUI test preset", exact: true }),
-	).toBeVisible();
-	await page.keyboard.press("Escape");
+	await expect(page.getByRole("button", { name: "Open presets", exact: true })).toHaveCount(0);
 	await page.getByRole("button", { name: "Add Layer", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Annotation", exact: true }).click();
 	await expect
@@ -117,27 +111,9 @@ test("recorder opens device and source popovers", async ({ page }) => {
 	await page.getByRole("button", { name: "Built-in Display", exact: true }).click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 	await page.keyboard.press("Escape");
-	await page.getByRole("button", { name: "More", exact: true }).click();
-	await page.getByRole("button", { name: "Dark", exact: true }).click();
-	await expect(page.locator("html")).toHaveClass(/dark/);
-	await page.screenshot({
-		path: "test-results/hud-dark.png",
-		fullPage: true,
-		animations: "disabled",
-	});
-	await page.getByRole("button", { name: "More", exact: true }).click();
-	await page.getByRole("button", { name: "Light", exact: true }).click();
-	await page.getByRole("button", { name: "More", exact: true }).click();
-	await page
-		.getByRole("dialog")
-		.getByRole("button", { name: "Open project", exact: false })
-		.click();
-	await expect(page.getByText("No saved projects yet", { exact: true })).toBeVisible();
-	await page.keyboard.press("Escape");
-	await page.screenshot({
-		path: "test-results/hud-light.png",
-		fullPage: true,
-		animations: "disabled",
-	});
+	await expect(page.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
+	await page.getByRole("button", { name: "Home", exact: true }).click();
+	await expect(page.locator("html")).toHaveAttribute("data-dashboard-opened", "true");
+
 	expect(errors).toEqual([]);
 });

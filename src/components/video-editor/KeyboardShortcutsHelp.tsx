@@ -1,7 +1,7 @@
 import { Kbd } from "@heroui/react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Gear as Settings2, Question as HelpCircle } from "@phosphor-icons/react";
+import { Gear as Settings2, Question as HelpCircle } from "@/components/ui/icons";
 import { useEffect, useState } from "react";
 import { useScopedT } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";

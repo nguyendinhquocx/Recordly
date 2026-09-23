@@ -1,5 +1,5 @@
 import { useTimelinePresentation } from "../../core/TimelinePresentation";
-import { Plus } from "@phosphor-icons/react";
+import { Plus } from "@/components/ui/icons";
 import { useTimelineContext } from "dnd-timeline";
 import {
 	type MouseEvent,

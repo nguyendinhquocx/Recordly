@@ -9,7 +9,7 @@ import {
 	ArrowCounterClockwise,
 	DotsThree,
 	FolderOpen,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { RECORDING_DRAG_TYPE } from "@/types/recordingLibrary";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,7 @@ export function RecordingLibraryPanel({
 		<section
 			ref={panelRef}
 			tabIndex={-1}
-			aria-label="Videos library"
+			aria-label="Clips library"
 			data-recording-library
 			className="outline-none flex min-h-0 flex-1 flex-col"
 			onKeyDown={(event) => {
@@ -74,24 +74,24 @@ export function RecordingLibraryPanel({
 			}}
 		>
 			<header className="flex min-h-14 shrink-0 items-center gap-2 px-5 py-3">
-				<h2 className="flex-1 text-[14px] font-semibold">Videos</h2>
+				<h2 className="flex-1 text-[14px] font-semibold">Clips</h2>
 				<Dropdown>
 					<HeroButton
 						isIconOnly
 						variant="ghost"
 						size="sm"
-						aria-label="Video library actions"
+						aria-label="Clip library actions"
 					>
 						<DotsThree className="size-5" />
 					</HeroButton>
 					<Dropdown.Popover placement="bottom end">
-						<Dropdown.Menu aria-label="Video library actions">
+						<Dropdown.Menu aria-label="Clip library actions">
 							<Dropdown.Item
 								id="folder"
 								textValue="Open recordings folder"
 								onAction={() => void window.electronAPI.openRecordingsFolder()}
 							>
-								<FolderOpen className="size-4" />
+								<FolderOpen weight="fill" className="size-4" />
 								<Label>Open recordings folder</Label>
 							</Dropdown.Item>
 							<Dropdown.Item
@@ -115,7 +115,7 @@ export function RecordingLibraryPanel({
 					variant="ghost"
 					size="icon"
 					className="size-7"
-					aria-label="Close Videos"
+					aria-label="Close Clips"
 					onClick={() => library.setOpen(false)}
 				>
 					<X />

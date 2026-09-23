@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { CloudArrowUp } from "@phosphor-icons/react";
+import { CloudArrowUp } from "@/components/ui/icons";
 import { CloudShareButton } from "../cloud/CloudShareButton";
 import { Card } from "@heroui/react";
 import { ProgressBar } from "@heroui/react";
-import { DownloadSimple as Download } from "@phosphor-icons/react";
+import { DownloadSimple as Download } from "@/components/ui/icons";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +15,7 @@ import type { useExportSettings } from "../export/useExportSettings";
 import type { useExportStatusViewModel } from "../export/useExportStatusViewModel";
 
 type Props = {
+ projectPath?: string | null;
 	t: ReturnType<typeof useI18n>["t"];
 	exportSettings: ReturnType<typeof useExportSettings>;
 	exportSession: ReturnType<typeof useExportSession>;
@@ -359,6 +360,7 @@ export function EditorExportMenu(props: Props) {
 			</Popover>
 			{shareOpen && (
 				<CloudShareButton
+ projectPath={props.projectPath}
 					hideTrigger
 					open={shareOpen}
 					onOpenChange={setShareOpen}

@@ -3,6 +3,7 @@ import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback 
 import {
 	clampFocusToDepth,
 	DEFAULT_AUTO_ZOOM_DEPTH,
+	DEFAULT_ZOOM_DEPTH,
 	type EditorEffectSection,
 	type ZoomDepth,
 	type ZoomFocus,
@@ -72,7 +73,7 @@ export function useZoomRegionCommands({
 	const handleZoomAdded = useCallback(
 		(span: Span) => {
 			const id = `zoom-${nextZoomIdRef.current++}`;
-			const depth: ZoomDepth = 2;
+			const depth = DEFAULT_ZOOM_DEPTH;
 			const newRegion: ZoomRegion = {
 				id,
 				startMs: Math.round(span.start),

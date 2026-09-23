@@ -13,7 +13,7 @@ const isRecording = (name: string) =>
 	/\.(mp4|mov|webm|mkv|m4v)$/i.test(name) && !/[.-]webcam[.-]/i.test(name);
 const batchKey = (paths: string[]) => JSON.stringify([...new Set(paths)].sort());
 
-export function listRecordings(): Promise<RecordingLibraryEntry[]> {
+export function listRecordings(includeSources = false): Promise<RecordingLibraryEntry[]> {
 	const task = mutation.then(async () => {
 		const root = await fs.realpath(await getRecordingsDir());
 		const server = getMediaServerBaseUrl();
@@ -31,7 +31,7 @@ export function listRecordings(): Promise<RecordingLibraryEntry[]> {
 		}
 		const result: RecordingLibraryEntry[] = [];
 		for (const entry of entries) {
-			if (!entry.isFile() || !isRecording(entry.name)) continue;
+			if (!entry.isFile() || !(includeSources ? /\.(mp4|mov|webm|mkv|m4v|wav|m4a|mp3|ogg|flac)$/i.test(entry.name) : isRecording(entry.name))) continue;
 			const filePath = path.join(root, entry.name);
 			const stat = await fs.stat(filePath);
 			if (!stat.size) continue;

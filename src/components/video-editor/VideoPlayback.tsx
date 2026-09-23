@@ -217,6 +217,7 @@ function getEffectiveNativeAspectRatio(
 }
 
 interface VideoPlaybackProps {
+	autoPlay?: boolean;
 	clipRegions: ClipRegion[];
 	videoPath: string;
 	onDurationChange: (duration: number) => void;
@@ -303,6 +304,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 	(
 		{
 			videoPath,
+			autoPlay = false,
 			onDurationChange,
 			onPreviewReadyChange,
 			onTimeUpdate,
@@ -1925,6 +1927,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			});
 			clipPlaybackRef.current = transport;
 			transport.seek(timelineTimeRef.current);
+			if (autoPlay)
+				void transport.play().catch((error) => onPlaybackErrorRef.current(String(error)));
 			const handleSeeked = () => {
 				isSeekingRef.current = false;
 				// A source seek at a contiguous cut must not reset the camera springs.
@@ -1955,7 +1959,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 				videoSpriteRef.current = null;
 			};
-		}, [onPlayStateChange, onTimeUpdate, pixiReady, videoReady]);
+		}, [autoPlay, onPlayStateChange, onTimeUpdate, pixiReady, videoReady]);
 
 		useEffect(() => {
 			if (!pixiReady || !videoReady) return;

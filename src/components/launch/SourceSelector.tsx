@@ -1,5 +1,5 @@
 import { ToggleButton } from "@heroui/react";
-import { AppWindowIcon, CaretUpIcon, MonitorIcon } from "@phosphor-icons/react";
+import { AppWindowIcon, CaretUpIcon, MonitorIcon } from "@/components/ui/icons";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";

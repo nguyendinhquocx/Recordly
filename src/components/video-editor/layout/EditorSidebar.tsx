@@ -1,11 +1,6 @@
-import {
-	UserCircle,
-	Camera,
-	ClosedCaptioning,
-	Cursor,
-	Gear,
-	FrameCorners,
-} from "@phosphor-icons/react";
+import { AccountAvatar } from "@/components/ui/account-avatar";
+import type { User } from "@supabase/supabase-js";
+import { Camera, ClosedCaptioning, Cursor, Gear, FrameCorners } from "@/components/ui/icons";
 import {
 	ToggleButtonGroup,
 	ToggleButton,
@@ -23,6 +18,7 @@ import { SettingsPanel } from "../SettingsPanel";
 import type { EditorEffectSection } from "../types";
 
 type Props = {
+	accountUser?: User | null;
 	panelContent?: ReactNode;
 	onAccountClick?: () => void;
 	t: ReturnType<typeof useI18n>["t"];
@@ -33,6 +29,7 @@ type Props = {
 
 export function EditorSidebar({
 	t,
+	accountUser,
 	activeSection,
 	setActiveSection,
 	settingsPanelProps,
@@ -94,7 +91,14 @@ export function EditorSidebar({
 								isIconOnly
 								aria-label={section.label}
 							>
-								<section.icon className="size-5" />
+								<section.icon
+									weight={
+										!panelContent && activeSection === section.id
+											? "fill"
+											: "regular"
+									}
+									className="size-5"
+								/>
 							</ToggleButton>
 							<Tooltip.Content placement="right">{section.label}</Tooltip.Content>
 						</Tooltip>
@@ -108,13 +112,13 @@ export function EditorSidebar({
 						aria-label="Recordly account"
 						onPress={onAccountClick}
 					>
-						<UserCircle className="size-5" />
+						<AccountAvatar user={accountUser} className="!size-7" />
 					</Button>
 					<Tooltip.Content placement="right">Account</Tooltip.Content>
 				</Tooltip>
 			</nav>
 			<aside
-				aria-label={panelContent ? "Videos" : undefined}
+				aria-label={panelContent ? "Clips" : undefined}
 				className="editor-inspector [--text-sm:0.8125rem] [--text-base:0.8125rem] flex w-[320px] min-h-0 flex-col"
 			>
 				<Card className="min-h-0 flex-1 gap-0 overflow-hidden p-0">

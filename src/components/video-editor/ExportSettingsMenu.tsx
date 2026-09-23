@@ -1,4 +1,4 @@
-import { DownloadSimple as Download, FilmSlate as Film, Image } from "@phosphor-icons/react";
+import { DownloadSimple as Download, FilmSlate as Film, Image } from "@/components/ui/icons";
 import { Card, Label, Description, TagGroup, Tag } from "@heroui/react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";

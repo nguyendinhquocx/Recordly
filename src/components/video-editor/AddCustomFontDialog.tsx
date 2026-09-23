@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react";
+import { Plus } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";

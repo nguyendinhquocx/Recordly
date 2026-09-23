@@ -1,5 +1,6 @@
+import { saveProjectShareLink } from "./projectShareLinks";
 import { useI18n } from "@/contexts/I18nContext";
-import { Check, CloudArrowUp, Copy, ShareNetwork } from "@phosphor-icons/react";
+import { Check, CloudArrowUp, Copy, ShareNetwork } from "@/components/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 const DEFAULT_CLOUD_ENDPOINT = "http://localhost:8787/api/upload";
 
 type Props = {
+ projectPath?: string | null;
 	filePath?: string;
 	projectTitle: string;
 	prepareFile?: () => Promise<string | undefined>;
@@ -27,6 +29,7 @@ type Props = {
 };
 
 export function CloudShareButton({
+	projectPath,
 	filePath,
 	projectTitle,
 	prepareFile,
@@ -127,6 +130,7 @@ export function CloudShareButton({
 			}
 			setProgress(100);
 			setShareUrl(result.shareUrl);
+ if (projectPath) { try { saveProjectShareLink(projectPath, result.shareUrl); } catch { toast.error("Share created, but its link could not be saved locally"); } }
 			toast.success(t("editor.cloud.linkCreated"));
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : String(cause));
@@ -135,7 +139,7 @@ export function CloudShareButton({
 			setPhase("idle");
 			setUploadId(undefined);
 		}
-	}, [authToken, filePath, notes, prepareFile, projectTitle, t]);
+	}, [projectPath, authToken, filePath, notes, prepareFile, projectTitle, t]);
 
 	const handleCancel = useCallback(async () => {
 		cancelRequestedRef.current = true;

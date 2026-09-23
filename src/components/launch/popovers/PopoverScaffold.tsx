@@ -1,7 +1,7 @@
 import { ToggleButton } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { MicrophoneIcon, MicrophoneSlashIcon } from "@phosphor-icons/react";
-import type { ReactElement, ReactNode } from "react";
+import { MicrophoneIcon, MicrophoneSlashIcon } from "@/components/ui/icons";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAudioLevelMeter } from "@/hooks/useAudioLevelMeter";
 import { AudioLevelMeter } from "@/components/ui/audio-level-meter";
@@ -25,7 +25,13 @@ export function DropdownItem({
 }) {
 	const content = (
 		<>
-			<span className="shrink-0">{icon}</span>
+			<span className="shrink-0">
+				{isValidElement(icon)
+					? cloneElement(icon as ReactElement<{ weight?: string }>, {
+							weight: selected ? "fill" : "regular",
+						})
+					: icon}
+			</span>
 			<span className="truncate">{children}</span>
 			{trailing}
 		</>
@@ -68,7 +74,11 @@ export function MicDeviceRow({
 			onClick={onSelect}
 		>
 			<span className="shrink-0">
-				{selected ? <MicrophoneIcon size={16} /> : <MicrophoneSlashIcon size={16} />}
+				{selected ? (
+					<MicrophoneIcon weight="fill" size={16} />
+				) : (
+					<MicrophoneSlashIcon size={16} />
+				)}
 			</span>
 			<span className="truncate flex-1">{device.label}</span>
 			<AudioLevelMeter level={level} className="w-16 shrink-0" />

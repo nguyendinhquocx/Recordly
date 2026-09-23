@@ -647,7 +647,7 @@ export const ZOOM_DEPTH_SCALES: Record<ZoomDepth, number> = {
 };
 
 export const DEFAULT_ZOOM_DEPTH: ZoomDepth = 3;
-export const DEFAULT_AUTO_ZOOM_DEPTH: ZoomDepth = 2;
+export const DEFAULT_AUTO_ZOOM_DEPTH: ZoomDepth = DEFAULT_ZOOM_DEPTH;
 
 export function clampFocusToDepth(focus: ZoomFocus, _depth: ZoomDepth): ZoomFocus {
 	return {

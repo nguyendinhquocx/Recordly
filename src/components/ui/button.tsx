@@ -57,10 +57,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 		isIconOnly: size === "icon",
 		className: cn(
 			{
-				"[&_svg]:size-4": iconSize === "default",
-				"[&_svg]:size-3.5": iconSize === "sm",
-				"[&_svg]:size-5": iconSize === "lg",
-				"[&_svg]:size-6": iconSize === "xl",
+				"[&_svg:not([class*=size-])]:size-4": iconSize === "default",
+				"[&_svg:not([class*=size-])]:size-3.5": iconSize === "sm",
+				"[&_svg:not([class*=size-])]:size-5": iconSize === "lg",
+				"[&_svg:not([class*=size-])]:size-6": iconSize === "xl",
 			},
 			variant === "link" && "h-auto p-0 underline underline-offset-4",
 			className,

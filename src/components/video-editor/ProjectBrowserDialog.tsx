@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { toFileUrl } from "./projectPersistence";
 
 export type ProjectLibraryEntry = {
+	rawSource?: import("@/types/recordingLibrary").RecordingLibraryEntry;
 	path: string;
 	name: string;
+	createdAt?: number;
 	updatedAt: number;
 	thumbnailPath: string | null;
 	isCurrent: boolean;

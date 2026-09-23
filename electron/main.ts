@@ -55,7 +55,7 @@ import {
 	getUpdateToastWindow,
 	hideUpdateToastWindow,
 	isHudOverlayMousePassthroughSupported,
-	reassertHudOverlayCaptureProtection,
+	beginHudCaptureProtection,
 	reassertHudOverlayMousePassthrough as reassertHudOverlayMouseState,
 	setHudOverlayRecordingActive,
 	showUpdateToastWindow,
@@ -873,7 +873,9 @@ function createSourceSelectorWindowWrapper() {
 app.on("before-quit", () => {
 	isAppQuitting = true;
 	authCallbacks.close();
-	void clearRecordingTrashUndo().catch((error) => console.warn("Could not clear recording undo cache", error));
+	void clearRecordingTrashUndo().catch((error) =>
+		console.warn("Could not clear recording undo cache", error),
+	);
 	killWindowsCaptureProcess();
 	showCursor();
 	cleanupNativeVideoExportSessions();
@@ -902,7 +904,9 @@ app.on("second-instance", (_event, commandLine) => {
 app.whenReady().then(async () => {
 	authCallbacks.startDevServer();
 	if (process.defaultApp && process.argv[1]) {
-		app.setAsDefaultProtocolClient(authCallbacks.protocol, process.execPath, [path.resolve(process.argv[1])]);
+		app.setAsDefaultProtocolClient(authCallbacks.protocol, process.execPath, [
+			path.resolve(process.argv[1]),
+		]);
 	} else {
 		app.setAsDefaultProtocolClient(authCallbacks.protocol);
 	}
@@ -1105,7 +1109,7 @@ app.whenReady().then(async () => {
 
 			// Browser and Linux portal capture starts as soon as this callback
 			// resolves, before recording-state-changed is emitted.
-			reassertHudOverlayCaptureProtection();
+			beginHudCaptureProtection();
 
 			const sourceId = getSelectedSourceId();
 			// On Linux/Wayland, calling desktopCapturer.getSources() itself

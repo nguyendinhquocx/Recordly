@@ -1,10 +1,11 @@
-import { Input } from "@/components/ui/input";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
+import { Separator } from "@heroui/react";
 import {
-	FolderOpen,
+	House,
 	FilmStrip,
 	ArrowClockwise as Redo2,
 	ArrowCounterClockwise as Undo2,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import type { CSSProperties, FormEvent, RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import type { useI18n } from "@/contexts/I18nContext";
@@ -14,13 +15,15 @@ import type { useExportSettings } from "../export/useExportSettings";
 import type { useExportStatusViewModel } from "../export/useExportStatusViewModel";
 import type { useVideoEditorPresets } from "../presets/useVideoEditorPresets";
 import type { useProjectState } from "../state/useProjectState";
-import { APP_HEADER_ICON_BUTTON_CLASS, DiscordLinkButton, FeedbackDialog } from "../TutorialHelp";
 import { EditorExportMenu } from "./EditorExportMenu";
 import { EditorPresetMenu } from "./EditorPresetMenu";
 
+// Keep the preset implementation available for future use.
+const SHOW_PRESETS_BUTTON = false;
+
 type Props = {
-	videosOpen?: boolean;
-	onToggleVideos?: () => void;
+	clipsOpen: boolean;
+	onToggleClips: () => void;
 	t: ReturnType<typeof useI18n>["t"];
 	headerLeftControlsPaddingClass: string;
 	project: ReturnType<typeof useProjectState>;
@@ -100,127 +103,132 @@ export function EditorHeader(props: Props) {
 
 	return (
 		<header
-			className="editor-header [--text-sm:0.8125rem] relative z-50 grid h-14 shrink-0 border-b border-separator grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)] items-center gap-3 px-4"
+			className="editor-header [--text-sm:0.8125rem] relative z-50 grid h-14 shrink-0 border-b border-separator grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4"
 			style={{ WebkitAppRegion: "drag" } as CSSProperties}
 		>
 			<div
-				className={`editor-header-start flex items-center justify-self-start gap-1 ${headerLeftControlsPaddingClass}`}
+				className={`editor-header-start flex min-w-0 items-center gap-1 ${headerLeftControlsPaddingClass}`}
 				style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 			>
-				<Button
-					type="button"
-					variant="secondary"
-					className="[--button-bg:var(--surface)] [--button-fg:var(--foreground)] mr-2 inline-flex h-9 min-w-[104px] items-center justify-center gap-2 px-4.5"
-					aria-expanded={props.videosOpen}
-					onClick={props.onToggleVideos}
-				>
-					<FilmStrip className="h-4 w-4" />
-					<span className="text-sm font-semibold tracking-tight">
-						{t("editor.library.videos", "Videos")}
-					</span>
-				</Button>
 				<Button
 					ref={projectBrowserTriggerRef}
 					type="button"
 					variant="ghost"
 					size="sm"
 					onClick={handleOpenProjectBrowser}
-					className={APP_HEADER_ICON_BUTTON_CLASS}
-					title={t("editor.project.projects", "Open projects")}
-					aria-label={t("editor.project.projects", "Open projects")}
+					className="h-9 shrink-0 gap-2 px-3"
+					title="Home"
+					aria-label="Home"
 				>
-					<FolderOpen className="h-4 w-4" />
+					<House weight="fill" className="h-4 w-4" />
+					<span>Home</span>
 				</Button>
-				<div className="editor-header-community flex items-center gap-1">
-					<DiscordLinkButton />
-					<FeedbackDialog />
-				</div>
-				<div className="mx-2 h-4 w-px shrink-0 bg-separator" />
-				<Button
-					type="button"
-					variant="ghost"
-					onClick={handleUndo}
-					disabled={!canUndo}
-					className="inline-flex h-9 w-9 min-w-9 items-center justify-center p-0 disabled:cursor-not-allowed"
-					title={t("common.actions.undo", "Undo")}
-					aria-label={t("common.actions.undo", "Undo")}
+				<span
+					aria-hidden="true"
+					className="mx-2 shrink-0 text-xl font-light text-muted-foreground/60"
 				>
-					<Undo2 className="h-4 w-4" />
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					onClick={handleRedo}
-					disabled={!canRedo}
-					className="inline-flex h-9 w-9 min-w-9 items-center justify-center p-0 disabled:cursor-not-allowed"
-					title={t("common.actions.redo", "Redo")}
-					aria-label={t("common.actions.redo", "Redo")}
-				>
-					<Redo2 className="h-4 w-4" />
-				</Button>
-			</div>
+					/
+				</span>
 
-			<div
-				className="editor-header-title flex min-w-0 items-center justify-center"
-				style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
-			>
-				{isEditingProjectName ? (
-					<form
-						onSubmit={(event) => void handleProjectNameSubmit(event)}
-						className="flex w-full min-w-0 items-center gap-1"
-					>
-						{hasUnsavedChanges ? (
-							<span className="size-1.5 shrink-0 rounded-full bg-accent" />
-						) : null}
-						<Input
-							ref={projectNameInputRef}
-							type="text"
-							value={projectNameDraft}
-							onChange={(event) => setProjectNameDraft(event.target.value)}
-							onBlur={() => {
-								if (!isSavingProjectName) closeProjectNameEditor();
-							}}
-							onKeyDown={(event) => {
-								if (event.key === "Escape") {
-									event.preventDefault();
-									closeProjectNameEditor();
-								}
-							}}
-							disabled={isSavingProjectName}
-							className="min-w-0 w-full text-sm disabled:cursor-wait"
-							aria-label={t("editor.project.renameInput", "Project name")}
-						/>
-						<span className="project-file-extension shrink-0 text-xs font-medium tracking-tight text-muted-foreground/70">
-							.recordly
-						</span>
-					</form>
-				) : (
-					<Button
-						variant="ghost"
-						type="button"
-						onClick={() => setIsEditingProjectName(true)}
-						className="inline-flex h-9 min-w-0 max-w-full items-center gap-1.5 px-3"
-						title={t("editor.project.renameTitle", "Rename project")}
-						aria-label={t("editor.project.renameTitle", "Rename project")}
-					>
-						{hasUnsavedChanges ? (
-							<span className="size-1.5 shrink-0 rounded-full bg-accent" />
-						) : null}
-						<span className="truncate text-[13px] font-medium tracking-tight text-foreground/90">
-							{projectDisplayName}
-						</span>
-						<span className="project-file-extension shrink-0 text-xs font-medium tracking-tight text-muted-foreground/70">
-							.recordly
-						</span>
-					</Button>
-				)}
+				<div
+					className="editor-header-title flex min-w-0 items-center"
+					style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+				>
+					{isEditingProjectName ? (
+						<form
+							onSubmit={(event) => void handleProjectNameSubmit(event)}
+							className="flex w-full min-w-0 items-center gap-1.5 px-1"
+						>
+							{hasUnsavedChanges ? (
+								<span className="size-1.5 shrink-0 rounded-full bg-accent" />
+							) : null}
+							<input
+								ref={projectNameInputRef}
+								type="text"
+								value={projectNameDraft}
+								onChange={(event) => setProjectNameDraft(event.target.value)}
+								onBlur={() => {
+									if (
+										!isSavingProjectName &&
+										projectNameDraft.trim() !== projectDisplayName
+									)
+										void handleProjectNameSubmit();
+									else if (!isSavingProjectName) closeProjectNameEditor();
+								}}
+								onKeyDown={(event) => {
+									if (event.key === "Escape") {
+										event.preventDefault();
+										closeProjectNameEditor();
+									}
+								}}
+								disabled={isSavingProjectName}
+								className="inline-project-name h-9 min-w-0 max-w-full text-sm font-semibold tracking-tight text-foreground/90 disabled:cursor-wait"
+								style={{ width: `${Math.max(12, projectNameDraft.length + 1)}ch` }}
+								aria-label={t("editor.project.renameInput", "Project name")}
+							/>
+						</form>
+					) : (
+						<Button
+							variant="ghost"
+							type="button"
+							onClick={() => setIsEditingProjectName(true)}
+							className="inline-flex h-9 min-w-0 max-w-full items-center gap-1.5 px-1"
+							title={t("editor.project.renameTitle", "Rename project")}
+							aria-label={t("editor.project.renameTitle", "Rename project")}
+						>
+							{hasUnsavedChanges ? (
+								<span className="size-1.5 shrink-0 rounded-full bg-accent" />
+							) : null}
+							<span className="truncate text-sm font-semibold tracking-tight text-foreground/90">
+								{projectDisplayName}
+							</span>
+						</Button>
+					)}
+				</div>
+				<Separator orientation="vertical" className="mx-3 h-5 shrink-0 self-center" />
+				<Button
+					variant="secondary"
+					size="sm"
+					className="h-9 shrink-0 gap-2"
+					aria-expanded={props.clipsOpen}
+					onClick={props.onToggleClips}
+				>
+					<FilmStrip weight={props.clipsOpen ? "fill" : "regular"} className="size-4" />
+					Clips
+				</Button>
 			</div>
 
 			<div
 				className="editor-header-end flex min-w-0 items-center justify-self-end gap-3"
 				style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 			>
-				<EditorPresetMenu t={t} presets={presets} />
+				<div className="flex items-center gap-1">
+					<Separator orientation="vertical" className="mx-3 h-5 shrink-0 self-center" />
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={handleUndo}
+						disabled={!canUndo}
+						className="inline-flex h-9 w-9 min-w-9 items-center justify-center p-0 disabled:cursor-not-allowed"
+						title={t("common.actions.undo", "Undo")}
+						aria-label={t("common.actions.undo", "Undo")}
+					>
+						<Undo2 className="h-4 w-4" />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={handleRedo}
+						disabled={!canRedo}
+						className="inline-flex h-9 w-9 min-w-9 items-center justify-center p-0 disabled:cursor-not-allowed"
+						title={t("common.actions.redo", "Redo")}
+						aria-label={t("common.actions.redo", "Redo")}
+					>
+						<Redo2 className="h-4 w-4" />
+					</Button>
+				</div>
+				{SHOW_PRESETS_BUTTON && <EditorPresetMenu t={t} presets={presets} />}
+				<FeedbackDialog />
 				<EditorExportMenu
 					t={t}
 					exportSettings={exportSettings}
@@ -238,6 +246,7 @@ export function EditorHeader(props: Props) {
 					handleStartExportFromDropdown={handleStartExportFromDropdown}
 					revealExportedFile={revealExportedFile}
 					exportMessage={exportMessage}
+					projectPath={project.currentProjectPath}
 					projectTitle={projectDisplayName}
 					prepareExportForShare={props.prepareExportForShare}
 					onRequestShareSignIn={props.onRequestShareSignIn}

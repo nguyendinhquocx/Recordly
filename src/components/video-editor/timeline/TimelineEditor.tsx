@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react";
+import { Plus } from "@/components/ui/icons";
 import type { Span } from "dnd-timeline";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import type {

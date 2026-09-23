@@ -1,5 +1,6 @@
 /* biome-ignore-all lint/correctness/useExhaustiveDependencies: grouped editor domain objects contain the thumbnail renderer dependencies. */
 import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { PROJECT_THUMBNAIL_WIDTH, PROJECT_THUMBNAIL_HEIGHT } from "@/lib/projectThumbnail";
 import { FrameRenderer } from "@/lib/exporter/frameRenderer";
 import { toFileUrl } from "../projectPersistence";
 import type { useAppearanceState } from "../state/useAppearanceState";
@@ -112,8 +113,8 @@ export function useProjectLibraryController({
 		}
 
 		const canvas = document.createElement("canvas");
-		const targetWidth = 320;
-		const targetHeight = 180;
+		const targetWidth = PROJECT_THUMBNAIL_WIDTH;
+		const targetHeight = PROJECT_THUMBNAIL_HEIGHT;
 		canvas.width = targetWidth;
 		canvas.height = targetHeight;
 

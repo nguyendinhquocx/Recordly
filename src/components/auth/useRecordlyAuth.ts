@@ -1,5 +1,6 @@
+import { demoUser, hasDemoSession, subscribeDemoSession } from "@/lib/auth/demoSession";
 import type { User } from "@supabase/supabase-js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
 	completeAuthCallback,
 	recordlyAuth,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/auth/recordlyAuth";
 
 export function useRecordlyAuth() {
+	const demo = useSyncExternalStore(subscribeDemoSession, hasDemoSession, () => false);
 	const [user, setUser] = useState<User | null>(null);
 	const [accessToken, setAccessToken] = useState<string>();
 	const [loading, setLoading] = useState(recordlyAuthConfigured);
@@ -67,5 +69,11 @@ export function useRecordlyAuth() {
 		};
 	}, []);
 
-	return { user, accessToken, loading, configured: recordlyAuthConfigured, callbackError };
+	return {
+		user: demo ? demoUser : user,
+		accessToken: demo ? undefined : accessToken,
+		loading,
+		configured: recordlyAuthConfigured,
+		callbackError,
+	};
 }

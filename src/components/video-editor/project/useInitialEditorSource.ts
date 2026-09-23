@@ -181,7 +181,8 @@ export function useInitialEditorSource({
 
 				const currentVideo = await window.electronAPI.getCurrentVideoPath();
 				if (!currentVideo.success || !currentVideo.path) {
-					project.setError("No video to load. Please record or select a video.");
+					// An empty session is the normal dashboard launch, not a load failure.
+					project.setProjectBrowserOpen(true);
 					return;
 				}
 				const sourcePath = fromFileUrl(currentVideo.path);

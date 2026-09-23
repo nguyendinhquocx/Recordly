@@ -41,15 +41,12 @@ export function useProjectSnapshotModel({
 		[project.videoPath, project.videoSourcePath],
 	);
 	const projectDisplayName = useMemo(() => {
-		const fileName =
-			project.currentProjectPath?.split(/[\\/]/).pop() ??
-			currentSourcePath?.split(/[\\/]/).pop() ??
-			"";
+		const fileName = project.currentProjectPath?.split(/[\\/]/).pop() ?? "Untitled Project";
 		return (
 			fileName.replace(/\.recordly$/i, "").replace(/\.[^.]+$/, "") ||
-			t("editor.project.untitled", "Untitled")
+			t("editor.project.untitled", "Untitled Project")
 		);
-	}, [project.currentProjectPath, currentSourcePath, t]);
+	}, [project.currentProjectPath, t]);
 
 	useEffect(() => {
 		if (!project.isEditingProjectName) project.setProjectNameDraft(projectDisplayName);

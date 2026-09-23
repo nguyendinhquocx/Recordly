@@ -108,7 +108,7 @@ test("populated project and preset popovers fit long names and dismiss outside",
 	test.setTimeout(60000);
 	await installDesktopBridge(page);
 	await page.goto("/?windowType=editor");
-	await expect(page.getByRole("button", { name: "Open projects", exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Home", exact: true })).toBeVisible();
 	await page.evaluate(() => {
 		window.electronAPI.listProjectFiles = async () => ({
 			success: true,
@@ -123,7 +123,7 @@ test("populated project and preset popovers fit long names and dismiss outside",
 			})),
 		});
 	});
-	await page.getByRole("button", { name: "Open projects", exact: true }).click();
+	await page.getByRole("button", { name: "Home", exact: true }).click();
 	const projects = page.getByRole("dialog", { name: "Projects", exact: true });
 	await expect(projects.getByRole("button", { name: /A very long project name/ })).toHaveCount(5);
 	await expectButtonsFit(projects);

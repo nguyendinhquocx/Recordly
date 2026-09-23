@@ -5,7 +5,7 @@ import {
 	MusicNotes as Music,
 	Scissors,
 	SpeakerX,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import { ClipFilmstrip } from "./components/filmstrip/ClipFilmstrip";
 import type { Span, GetSpanFromDragEvent, GetSpanFromResizeEvent } from "dnd-timeline";
 import { useItem, useTimelineContext } from "dnd-timeline";

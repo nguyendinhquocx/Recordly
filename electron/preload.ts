@@ -201,7 +201,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	},
 	getEditorMode: () => ipcRenderer.invoke("get-editor-mode"),
 	onEditorModeChanged: (callback: (inEditor: boolean) => void) => {
-		const listener = (_event: Electron.IpcRendererEvent, inEditor: boolean) => callback(inEditor);
+		const listener = (_event: Electron.IpcRendererEvent, inEditor: boolean) =>
+			callback(inEditor);
 		ipcRenderer.on("editor-mode-changed", listener);
 		return () => ipcRenderer.removeListener("editor-mode-changed", listener);
 	},
@@ -512,6 +513,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getSources: async (opts: Electron.SourcesOptions) => {
 		return await ipcRenderer.invoke("get-sources", opts);
 	},
+	showRecordingHud: () => ipcRenderer.invoke("show-recording-hud"),
+	createProjectFile: (data: unknown, thumbnail?: string | null) =>
+		ipcRenderer.invoke("create-project-file", data, thumbnail),
+	renameLibraryProject: (path: string, name: string) =>
+		ipcRenderer.invoke("rename-library-project", path, name),
+	trashProjectFiles: (paths: string[]) => ipcRenderer.invoke("trash-project-files", paths),
+	showProjectDashboard: () => ipcRenderer.invoke("show-project-dashboard"),
 	switchToEditor: () => {
 		return ipcRenderer.invoke("switch-to-editor");
 	},
@@ -798,7 +806,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	finishRecordingImport: (keepPath: string, commit?: boolean) =>
 		ipcRenderer.invoke("finish-recording-import", keepPath, commit),
 	cancelRecordingImport: () => ipcRenderer.invoke("cancel-recording-import"),
-	listRecordings: () => ipcRenderer.invoke("list-recordings"),
+	getProjectPreview: (projectPath: string) =>
+		ipcRenderer.invoke("get-project-preview", projectPath),
+	listRecordings: (includeSources?: boolean) =>
+		ipcRenderer.invoke("list-recordings", includeSources),
 	setRecordingsRemoved: (paths: string[], removed: boolean) =>
 		ipcRenderer.invoke("set-recordings-removed", paths, removed),
 	importRecording: (
@@ -1078,6 +1089,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	}) => ipcRenderer.invoke("set-recording-preferences", prefs),
 	getCountdownDelay: () => ipcRenderer.invoke("get-countdown-delay"),
 	setCountdownDelay: (delay: number) => ipcRenderer.invoke("set-countdown-delay", delay),
+	finishRecordingStartup: () => ipcRenderer.invoke("finish-recording-startup"),
 	startCountdown: (seconds: number) => ipcRenderer.invoke("start-countdown", seconds),
 	cancelCountdown: () => ipcRenderer.invoke("cancel-countdown"),
 	getActiveCountdown: () => ipcRenderer.invoke("get-active-countdown"),

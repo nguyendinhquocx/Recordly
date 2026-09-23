@@ -10,7 +10,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import ProjectBrowserDialog, { type ProjectLibraryEntry } from "../ProjectBrowserDialog";
+import type { ProjectLibraryEntry } from "../ProjectBrowserDialog";
+import { Dashboard } from "../dashboard/Dashboard";
 
 export type UnsavedChangesDecision = "cancel" | "discard" | "save";
 
@@ -37,9 +38,14 @@ interface EditorDialogsProps {
 	projectBrowserOpen: boolean;
 	setProjectBrowserOpen: Dispatch<SetStateAction<boolean>>;
 	projectLibraryEntries: ProjectLibraryEntry[];
-	projectBrowserAnchorRef: RefObject<HTMLButtonElement | null>;
+	projectError: string | null;
+	onDashboardSignIn: () => void;
+	onDeleteProjects: (paths: string[]) => Promise<string[]>;
+ onRenameProject: (path: string, name: string) => Promise<string>;
+ onShareProject: (path: string) => Promise<void>;
+	accountLabel?: string;
 	handleImportMediaOrProject: () => Promise<void>;
-	handleOpenProjectFromLibrary: (projectPath: string) => Promise<void>;
+	handleOpenProjectFromLibrary: (projectPath: string) => Promise<unknown>;
 	nativeCaptureUnavailableModalOpen: boolean;
 	setNativeCaptureUnavailableModalOpen: Dispatch<SetStateAction<boolean>>;
 }
@@ -61,7 +67,12 @@ export function EditorDialogs({
 	projectBrowserOpen,
 	setProjectBrowserOpen,
 	projectLibraryEntries,
-	projectBrowserAnchorRef,
+	projectError,
+	onDashboardSignIn,
+	onDeleteProjects,
+ onRenameProject,
+ onShareProject,
+	accountLabel,
 	handleImportMediaOrProject,
 	handleOpenProjectFromLibrary,
 	nativeCaptureUnavailableModalOpen,
@@ -170,13 +181,18 @@ export function EditorDialogs({
 				</DialogContent>
 			</Dialog>
 
-			<ProjectBrowserDialog
+			<Dashboard
 				open={projectBrowserOpen}
 				onOpenChange={setProjectBrowserOpen}
 				entries={projectLibraryEntries}
-				anchorRef={projectBrowserAnchorRef}
-				onImportFile={() => void handleImportMediaOrProject()}
-				onOpenProject={(projectPath) => void handleOpenProjectFromLibrary(projectPath)}
+				error={projectError}
+				onSignIn={onDashboardSignIn}
+				onDeleteProjects={onDeleteProjects}
+ onRenameProject={onRenameProject}
+ onShareProject={onShareProject}
+				accountLabel={accountLabel}
+				onImportFile={handleImportMediaOrProject}
+				onOpenProject={handleOpenProjectFromLibrary}
 			/>
 
 			<Dialog

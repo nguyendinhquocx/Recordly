@@ -1,9 +1,13 @@
+import { isHudInEditorMode } from "./hudEditorMode";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, ipcMain } from "electron";
-import { supportsHudCaptureProtection } from "../src/lib/hudCaptureProtection";
+import {
+	supportsHudCaptureProtection,
+	shouldProtectHudCapture,
+} from "../src/lib/hudCaptureProtection";
 import { USER_DATA_PATH } from "./appPaths";
 import {
 	getHudOverlayWindowBounds,
@@ -35,6 +39,7 @@ let hudOverlayIgnoringMouse = true;
 let hudOverlaySourceSelectionActive = false;
 let hudOverlayMouseReassertTimer: NodeJS.Timeout | null = null;
 let hudOverlayRecordingActive = false;
+let hudCaptureStarting = false;
 let hudOverlayWebcamPreviewVisible = false;
 let countdownWindow: BrowserWindow | null = null;
 let updateToastWindow: BrowserWindow | null = null;
@@ -153,11 +158,23 @@ function applyHudOverlayCaptureProtectionToWindow(hud: BrowserWindow, enabled: b
 	}
 
 	try {
-		hud.setContentProtection(enabled);
+		// Keep the idle HUD visible to screenshots and other capture applications.
+		hud.setContentProtection(
+			shouldProtectHudCapture(enabled, hudOverlayRecordingActive, hudCaptureStarting),
+		);
 	} catch (error) {
 		console.warn("Failed to apply HUD capture protection:", error);
 	}
 }
+
+export function beginHudCaptureProtection(): void {
+	hudCaptureStarting = true;
+	reassertHudOverlayCaptureProtection();
+}
+ipcMain.handle("finish-recording-startup", () => {
+	hudCaptureStarting = false;
+	reassertHudOverlayCaptureProtection();
+});
 
 export function reassertHudOverlayCaptureProtection(): boolean {
 	const enabled = loadHudOverlayCaptureProtectionSetting();
@@ -447,12 +464,24 @@ ipcMain.handle("set-hud-overlay-capture-protection", (_event, enabled: boolean) 
 });
 
 const editorWindows = new Set<BrowserWindow>();
+let recordingPreparationActive = false;
+function getHudEditorMode() {
+	return isHudInEditorMode(
+		editorWindows.size,
+		recordingPreparationActive,
+		hudOverlayRecordingActive,
+	);
+}
+export function setHudRecordingPreparationActive(active: boolean) {
+	recordingPreparationActive = active;
+	notifyEditorMode();
+}
 function notifyEditorMode() {
 	if (hudOverlayWindow && !hudOverlayWindow.webContents.isDestroyed()) {
-		hudOverlayWindow.webContents.send("editor-mode-changed", editorWindows.size > 0);
+		hudOverlayWindow.webContents.send("editor-mode-changed", getHudEditorMode());
 	}
 }
-ipcMain.handle("get-editor-mode", () => editorWindows.size > 0);
+ipcMain.handle("get-editor-mode", getHudEditorMode);
 
 export function createHudOverlayWindow(): BrowserWindow {
 	const perfStart = Date.now();
@@ -636,6 +665,9 @@ export function createHudOverlayWindow(): BrowserWindow {
 		screen.removeListener("display-metrics-changed", handleDisplayMetricsChanged);
 		if (hudOverlayWindow === win) {
 			hudOverlayWindow = null;
+			recordingPreparationActive = false;
+			hudCaptureStarting = false;
+			hudOverlayRecordingActive = false;
 		}
 	});
 
@@ -689,7 +721,9 @@ export function reassertHudOverlayMousePassthrough(): void {
 }
 
 export function setHudOverlayRecordingActive(recording: boolean): void {
+	hudCaptureStarting = false;
 	hudOverlayRecordingActive = Boolean(recording);
+	notifyEditorMode();
 	hudOverlayFallbackExpanded = false;
 	applyHudOverlayBounds();
 	reassertHudOverlayCaptureProtection();
@@ -946,6 +980,7 @@ export function createEditorWindow(): BrowserWindow {
 		},
 	});
 
+	recordingPreparationActive = false;
 	editorWindows.add(win);
 	notifyEditorMode();
 	win.once("closed", () => {

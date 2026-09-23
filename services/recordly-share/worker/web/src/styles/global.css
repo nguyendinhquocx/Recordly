@@ -1,16 +1,24 @@
 @import "tailwindcss";
 @import "@heroui/styles";
 
-/* Shared with the desktop HeroUI overhaul: default HeroUI tokens and system type. */
+@font-face {
+  font-family: 'DM Sans';
+  src: url('/fonts/DMSans-Variable.ttf') format('truetype');
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+@theme { --font-sans: 'DM Sans', sans-serif; }
+/* Match the desktop dashboard typography. */
 @layer base {
   :root {
     font-family:
-      ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   html {
     background: var(--background);
     color: var(--foreground);
-    color-scheme: dark;
+    color-scheme: light dark;
   }
   body {
     margin: 0;
@@ -433,42 +441,12 @@
   padding: 0 3px;
   font-size: 10px;
 }
-.library-main {
-  max-width: 1400px;
-  margin: auto;
-  padding: 28px;
-}
-.library-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: 20px;
-}
-.library-thumb {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  background: var(--surface-secondary);
-  border-radius: var(--radius);
-}
-.library-actions {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     scroll-behavior: auto !important;
   }
-}
-
-.library-main > .recording-heading {
-  margin-bottom: 24px;
-}
-.share-header > .link,
-.library-actions > .link {
-  gap: 8px;
 }
 
 .recording-app {
@@ -708,3 +686,29 @@
 
 .timeline-markers { height: 24px; flex-shrink: 0; }
 .timeline-markers .timeline-marker { height: 24px; min-width: 24px; font-size: 12px; }
+
+/* Same theme aliases and shell treatment as the desktop dashboard. */
+@theme inline { --color-muted-foreground: var(--muted); }
+.library-dashboard { height:100dvh; font-family:'DM Sans',sans-serif; }
+.dark .library-dashboard > .card { background:color-mix(in srgb,var(--background) 92%,var(--foreground) 8%); }
+.library-dashboard .custom-scrollbar { scrollbar-width:thin; }
+@media(max-width:640px) {
+ .library-dashboard { flex-direction:column; height:auto; min-height:100dvh; }
+ .library-dashboard > aside { width:100%; padding:16px; }
+ .library-dashboard > aside > nav { display:flex; }
+ .library-dashboard > aside .library-folders { max-height:160px; }
+ .library-dashboard > .card { margin:0 8px 8px; min-height:65dvh; }
+}
+
+/* Desktop dashboard shell uses the same HeroUI light/dark tokens. */
+.library-dashboard { background:color-mix(in srgb,var(--background) 92%,var(--foreground) 8%); }
+.dark .library-dashboard { background:var(--background); }
+.library-dashboard > .card { background:var(--background); }
+.dark .library-dashboard > .card { background:color-mix(in srgb,var(--background) 92%,var(--foreground) 8%); }
+.recording-app .viewer-heading { min-height:48px; gap:16px; }
+.viewer-identity { display:flex; align-items:flex-start; gap:16px; min-width:0; flex:1; }
+.viewer-caption { height:48px; min-width:0; flex:1; }
+.recording-app .viewer-heading .recording-title { display:block; font-size:12px; font-weight:500; line-height:20px; letter-spacing:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.recording-app .viewer-heading .recording-meta { margin-top:4px; height:24px; font-size:11px; gap:8px; white-space:nowrap; }
+.viewer-heading-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+@media(max-width:480px) { .recording-app .viewer-heading { flex-wrap:wrap; } .viewer-identity { flex-basis:100%; } .viewer-heading-actions { margin-left:auto; } }

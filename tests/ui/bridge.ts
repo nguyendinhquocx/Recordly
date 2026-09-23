@@ -12,6 +12,22 @@ export async function installDesktopBridge(page: Page, videoFixture = "preview.m
 		Object.assign(window, {
 			electronAPI: {
 				getAppSetting: () => null,
+				finishRecordingStartup: async () => undefined,
+				showProjectDashboard: async () => {
+					document.documentElement.dataset.dashboardOpened = "true";
+				},
+				chooseRecordingsDirectory: async () => ({
+					success: true,
+					path: "/new-recordings",
+					canceled: false,
+				}),
+				setHudOverlayCaptureProtection: async (enabled: boolean) => {
+					document.documentElement.dataset.hideHud = String(enabled);
+					return { success: true, enabled };
+				},
+				previewUpdateToast: async () => ({ success: true }),
+				setRecordingsRemoved: async () => ({ success: true, value: null }),
+				getRecordingThumbnail: async () => ({ success: false, error: "Unavailable" }),
 				setAppSetting: () => true,
 				getExperimentalUpdatesEnabled: async () => false,
 				getScreenRecordingPermissionStatus: async () => ({
@@ -29,8 +45,40 @@ export async function installDesktopBridge(page: Page, videoFixture = "preview.m
 					return () => window.removeEventListener("test-window-chrome", listener);
 				},
 				getAppVersion: async () => "1.4.0",
+				getProjectPreview: async () => ({ success: false, error: "Preview unavailable" }),
 				getAnnouncements: async () => ({ success: true, announcements: [] }),
 				loadCurrentProjectFile: async () => ({ success: false }),
+				createProjectFile: async () => {
+					document.documentElement.dataset.projectCreates = String(
+						Number(document.documentElement.dataset.projectCreates || 0) + 1,
+					);
+					return {
+						success: true,
+						path: "/projects/Untitled Project.recordly",
+						projectId: "test-project",
+					};
+				},
+				saveProjectFile: async (
+					_data: unknown,
+					_name: string,
+					projectPath: string,
+					thumbnail?: string,
+				) => {
+					document.documentElement.dataset.projectSaves = String(
+						Number(document.documentElement.dataset.projectSaves || 0) + 1,
+					);
+					if (thumbnail)
+						document.documentElement.dataset.savedThumbnail = thumbnail.slice(0, 22);
+					return { success: true, path: projectPath, projectId: "test-project" };
+				},
+				showRecordingHud: async () => {
+					document.documentElement.dataset.hudOpened = "true";
+				},
+				trashProjectFiles: async (paths: string[]) => ({
+					success: true,
+					deleted: paths,
+					errors: [],
+				}),
 				getCurrentRecordingSession: async () => ({ success: true, session: null }),
 				getCurrentVideoPath: async () => ({
 					success: true,
@@ -44,6 +92,9 @@ export async function installDesktopBridge(page: Page, videoFixture = "preview.m
 				finishRecordingImport: success,
 				setCurrentRecordingSession: success,
 				setHasUnsavedChanges: success,
+				onAuthCallbackUrl: subscribe,
+				getPendingAuthCallbackUrl: async () => null,
+				ackAuthCallbackUrl: success,
 				onMenuSaveProject: subscribe,
 				onMenuSaveProjectAs: subscribe,
 				onMenuLoadProject: subscribe,

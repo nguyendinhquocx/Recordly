@@ -1,3 +1,7 @@
+import { persistRecentMetadata } from "../project/recentMetadata";
+import { renameLibraryProject } from "../project/renameLibraryProject";
+import { createUntitledProject } from "../project/createUntitledProject";
+import { trashLibraryProjects } from "../project/trashProjects";
 import { getRecordingThumbnail } from "../recording/thumbnail";
 import { listRecordings, setRecordingsRemoved } from "../recording/library";
 import { importRecording, discardRecordingImport } from "../recording/importRecording";
@@ -17,6 +21,7 @@ import {
 	isTrustedProjectPath,
 	listProjectLibraryEntries,
 	loadProjectFromPath,
+	readProjectPreview,
 	loadRecentProjectPaths,
 	persistRecordingsDirectorySetting,
 	rememberApprovedLocalReadPath,
@@ -41,6 +46,7 @@ import {
 	getTelemetryPathForVideo,
 	isAutoRecordingPath,
 	normalizeVideoSourcePath,
+	normalizePath,
 	parseJsonWithByteOrderMark,
 } from "../utils";
 
@@ -214,6 +220,23 @@ async function ensureNamedProjectSaveDoesNotOverwriteDifferentProject(
 }
 
 export function registerProjectHandlers() {
+	ipcMain.handle("rename-library-project", async (_, source: string, name: string) => {
+		try {
+			const entries = await listProjectLibraryEntries();
+			const target = await renameLibraryProject(
+				source,
+				name,
+				entries.entries.map((entry) => entry.path),
+				(value) => [getProjectThumbnailPath(value), getProjectBackupPath(value)],
+			);
+			if (currentProjectPath && normalizePath(currentProjectPath) === normalizePath(source))
+				setCurrentProjectPath(target);
+			const warning = await persistRecentMetadata(() => rememberRecentProject(target));
+			return { success: true, path: target, warning };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
 	const imports = new Map<number, AbortController>();
 	const pendingImports = new Map<number, Set<string>>();
 	const watchedImportSenders = new WeakSet<Electron.WebContents>();
@@ -258,9 +281,16 @@ export function registerProjectHandlers() {
 			return { success: false, error: String(error) };
 		}
 	});
-	ipcMain.handle("list-recordings", async () => {
+	ipcMain.handle("get-project-preview", async (_, projectPath: string) => {
 		try {
-			return { success: true, value: await listRecordings() };
+			return { success: true, value: await readProjectPreview(projectPath) };
+		} catch (error) {
+			return { success: false, error: String(error) };
+		}
+	});
+	ipcMain.handle("list-recordings", async (_, includeSources?: boolean) => {
+		try {
+			return { success: true, value: await listRecordings(includeSources === true) };
 		} catch (error) {
 			return { success: false, error: String(error) };
 		}
@@ -671,6 +701,50 @@ export function registerProjectHandlers() {
 				success: false,
 				error: String(error),
 			};
+		}
+	});
+
+	ipcMain.handle(
+		"create-project-file",
+		async (_, projectData: unknown, thumbnailDataUrl?: string | null) => {
+			try {
+				const prepared = ensureProjectDataHasProjectId(projectData);
+				const target = await createUntitledProject(
+					await getProjectsDir(),
+					JSON.stringify(prepared.projectData, null, 2),
+				);
+				setCurrentProjectPath(target);
+				const warning = await persistRecentMetadata(() => rememberRecentProject(target));
+				try {
+					await saveProjectThumbnail(target, thumbnailDataUrl);
+				} catch (error) {
+					console.warn("Could not save project thumbnail", error);
+				}
+				return { success: true, path: target, projectId: prepared.projectId, warning };
+			} catch (error) {
+				return { success: false, message: String(error) };
+			}
+		},
+	);
+	ipcMain.handle("trash-project-files", async (_, paths: unknown) => {
+		try {
+			const result = await trashLibraryProjects(paths, {
+				list: listProjectLibraryEntries,
+				trash: (filePath) => shell.trashItem(filePath),
+				thumbnailPath: getProjectThumbnailPath,
+			});
+			if (currentProjectPath && result.deleted.includes(path.resolve(currentProjectPath)))
+				setCurrentProjectPath(null);
+			const warning = await persistRecentMetadata(async () =>
+				saveRecentProjectPaths(
+					(await loadRecentProjectPaths()).filter(
+						(p) => !result.deleted.includes(path.resolve(p)),
+					),
+				),
+			);
+			return { success: result.errors.length === 0, ...result, warning };
+		} catch (error) {
+			return { success: false, deleted: [], errors: [String(error)] };
 		}
 	});
 

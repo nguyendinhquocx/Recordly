@@ -4,8 +4,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @source "../index.html";
 
+/* DM Sans is bundled for consistent typography and offline desktop use. */
+@font-face {
+	font-family: "DM Sans";
+	src: url("./assets/fonts/dm-sans/DMSans-Variable.ttf") format("truetype");
+	font-style: normal;
+	font-weight: 100 1000;
+	font-display: swap;
+}
+@font-face {
+	font-family: "DM Sans";
+	src: url("./assets/fonts/dm-sans/DMSans-Italic-Variable.ttf") format("truetype");
+	font-style: italic;
+	font-weight: 100 1000;
+	font-display: swap;
+}
+
 /* Layout aliases only. All component colors and styling come from HeroUI's default theme. */
 @theme inline {
+	--font-sans: var(--app-font-sans);
 	--color-primary: var(--accent);
 	--color-primary-foreground: var(--accent-foreground);
 	--color-secondary: var(--default);
@@ -34,7 +51,7 @@
 @layer base {
 	:root {
 		--app-font-sans:
-			ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			"DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 		--brand-accent: var(--accent);
 		--brand-accent-rgb: 0, 111, 238;
 		--primary: var(--accent);
@@ -97,14 +114,6 @@
 .editor-playback {
 	container-type: inline-size;
 }
-@media (max-width: 1000px) {
-	.editor-header {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 0.4fr) minmax(0, 1fr);
-	}
-	.project-file-extension {
-		display: none;
-	}
-}
 @container (max-width: 760px) {
 	.editor-playback-tools {
 		grid-row: 2;
@@ -127,15 +136,19 @@
 	}
 }
 
-/* Visible keyboard focus for HeroUI controls and native focusable elements. */
+/* HeroUI owns control focus rings; native controls use the same accent token.
+   Do not outline dialogs or other programmatically focused containers. */
 :root,
 .dark {
-	--focus: var(--foreground);
+ --focus: var(--accent);
 }
-[data-focus-visible="true"],
-:focus-visible {
-	outline: 2px solid var(--focus);
-	outline-offset: 2px;
+:focus-visible:not([data-rac]):not([role="dialog"]):not([role="alertdialog"]):not([tabindex="-1"]) {
+ outline: 2px solid var(--focus);
+ outline-offset: 2px;
+}
+::selection {
+ background: var(--accent-soft);
+ color: var(--foreground);
 }
 
 @container (max-width: 110px) {
@@ -174,3 +187,28 @@
 		animation: none;
 	}
 }
+
+.dashboard-surface .folder-row > button {
+  background: transparent;
+}
+
+.inline-project-name {
+ background: transparent;
+ border: 0;
+ border-radius: 0;
+ box-shadow: none;
+ outline: none;
+ padding: 0;
+ color: inherit;
+}
+.inline-project-name:focus { outline: none; box-shadow: none; }
+.inline-project-name:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.dashboard-shell {
+ background-color: color-mix(in srgb, var(--background) 92%, var(--foreground) 8%);
+}
+
+.dark .dashboard-shell { background-color: var(--background); }
+.dark .dashboard-shell > .card { background-color: color-mix(in srgb, var(--background) 92%, var(--foreground) 8%); }
+
+.dashboard-settings .custom-scrollbar { padding-inline: 0; scrollbar-gutter: auto !important; }

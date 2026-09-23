@@ -53,17 +53,17 @@ async function setup(page: Page) {
 	});
 	await expect(page.locator('[data-variant="clip"] img').first()).toBeVisible();
 	await expect(page.getByLabel("Loading preview")).toHaveCount(0);
-	await page.getByRole("button", { name: "Videos", exact: true }).click();
+	await page.getByRole("button", { name: "Clips", exact: true }).click();
 	await expect(page.getByLabel("Select first.mp4")).toBeVisible();
 }
 
-test("Videos supports selection, remove all, undo and real timeline drag insertion", async ({
+test("Clips supports selection, remove all, undo and real timeline drag insertion", async ({
 	page,
 }) => {
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	await setup(page);
-	const panel = page.getByRole("complementary", { name: "Videos" });
+	const panel = page.getByRole("complementary", { name: "Clips" });
 	await expect(panel.locator("video")).toHaveCount(0);
 	await expect(panel.getByRole("img", { name: "Preview of first.mp4" })).toBeVisible();
 	await expect
@@ -74,9 +74,9 @@ test("Videos supports selection, remove all, undo and real timeline drag inserti
 		)
 		.toBeGreaterThan(0);
 	await expect(panel.getByText("first.mp4", { exact: true })).toBeVisible();
-	const videosButton = page.getByRole("button", { name: "Videos", exact: true });
-	expect((await videosButton.boundingBox())!.x).toBeLessThan(
-		(await page.getByRole("button", { name: "Open projects", exact: true }).boundingBox())!.x,
+	const videosButton = page.getByRole("button", { name: "Clips", exact: true });
+	expect((await videosButton.boundingBox())!.x).toBeGreaterThan(
+		(await page.getByRole("button", { name: "Rename project", exact: true }).boundingBox())!.x,
 	);
 	expect((await panel.boundingBox())!.x).toBeLessThan(100);
 	await expect(videosButton).toHaveClass(/button--secondary/);
@@ -88,7 +88,7 @@ test("Videos supports selection, remove all, undo and real timeline drag inserti
 	await expect(page.getByLabel("Select first.mp4")).toHaveCount(0);
 	await page.keyboard.press("Meta+z");
 	await expect(page.getByLabel("Select first.mp4")).toBeVisible();
-	await panel.getByRole("button", { name: "Video library actions", exact: true }).click();
+	await panel.getByRole("button", { name: "Clip library actions", exact: true }).click();
 	await page.getByRole("menuitem", { name: "Move all to Trash", exact: true }).click();
 	await expect(panel.getByText("Your recordings appear here")).toBeVisible();
 	await page.keyboard.press("Control+z");
@@ -192,7 +192,7 @@ test("preview recovers once when a local video URL fails to load", async ({ page
 	await expect(page.getByText(/Failed to load video/)).toHaveCount(0);
 });
 
-test("HUD project list fits its popover and scrolls only vertically", async ({ page }) => {
+test("dashboard project list scrolls vertically with long names", async ({ page }) => {
 	await page.setViewportSize({ width: 980, height: 600 });
 	await installDesktopBridge(page);
 	await installDesktopBridgeOverrides(page, () => {
@@ -209,21 +209,16 @@ test("HUD project list fits its popover and scrolls only vertically", async ({ p
 			})),
 		});
 	});
-	await page.goto("/?windowType=hud-overlay");
-	await page.getByRole("button", { name: /More/ }).click();
-	await page
-		.getByRole("dialog", { name: "Options" })
-		.getByRole("button", { name: "Open project", exact: true })
-		.click();
-	const entry = page.getByRole("button", { name: /An extremely long project/ });
+	await page.goto("/?windowType=editor");
+	await page.getByRole("button", { name: "Home", exact: true }).click();
+	const home = page.getByRole("dialog", { name: "Projects dashboard" });
+	const entry = home.getByRole("button", { name: /^An extremely long project/ });
 	await expect(entry).toHaveCount(30);
-	const content = entry.first().locator("xpath=../..");
+	const content = home.getByRole("main");
 	expect(await content.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
-	expect(await content.evaluate((node) => getComputedStyle(node).overflowX)).toBe("hidden");
-	expect(await content.evaluate((node) => getComputedStyle(node).scrollbarWidth)).toBe("thin");
 	await entry.last().scrollIntoViewIfNeeded();
-	await expect(entry.last()).toBeVisible();
-	await page.screenshot({ path: "test-results/hud-projects-vertical.png" });
+	await expect(entry.last()).toBeInViewport();
+	await page.screenshot({ path: "test-results/dashboard-projects-vertical.png" });
 });
 
 test("HUD source controls have no default gray fill or outline", async ({ page }) => {
@@ -244,7 +239,7 @@ test("HUD source controls have no default gray fill or outline", async ({ page }
 	await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
-test("Videos shows original filenames and truncates long names beside real still previews", async ({
+test("Clips shows original filenames and truncates long names beside real still previews", async ({
 	page,
 }) => {
 	await setup(page);
@@ -263,10 +258,10 @@ test("Videos shows original filenames and truncates long names beside real still
 			})),
 		});
 	});
-	const toggle = page.getByRole("button", { name: "Videos", exact: true });
+	const toggle = page.getByRole("button", { name: "Clips", exact: true });
 	await toggle.click();
 	await toggle.click();
-	const panel = page.getByRole("complementary", { name: "Videos" });
+	const panel = page.getByRole("complementary", { name: "Clips" });
 	await expect(panel.getByText("recording-1789866953739.mp4", { exact: true })).toBeVisible();
 	const name = panel.getByText("client-onboarding-walkthrough-with-a-very-long-file-name.mp4", {
 		exact: true,
@@ -306,7 +301,7 @@ for (const enabled of [true, false]) {
 		}, enabled);
 		await page.reload();
 		await expect(page.locator('[data-variant="clip"]')).toHaveCount(1);
-		await page.getByRole("button", { name: "Videos", exact: true }).click();
+		await page.getByRole("button", { name: "Clips", exact: true }).click();
 		await page.evaluate(() => {
 			let count = 0;
 			window.electronAPI.importRecording = async (current, path) => {
@@ -333,7 +328,7 @@ for (const enabled of [true, false]) {
 				],
 			});
 		});
-		const panel = page.getByRole("complementary", { name: "Videos" });
+		const panel = page.getByRole("complementary", { name: "Clips" });
 		await panel.locator('[data-slot="checkbox-control"]').first().click();
 		await expect(page.getByLabel("Select first.mp4")).toBeChecked();
 		await expect(page.getByLabel("Select second.mp4")).toBeChecked();
@@ -390,7 +385,7 @@ test("cancelling a batch keeps completed clips and stops the remaining import", 
 			return { success: true };
 		};
 	});
-	const panel = page.getByRole("complementary", { name: "Videos" });
+	const panel = page.getByRole("complementary", { name: "Clips" });
 	await panel.locator('[data-slot="checkbox-control"]').first().click();
 	await panel
 		.locator('[data-recording-path="/recordings/second.mp4"]')

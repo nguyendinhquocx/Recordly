@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowSquareOut, Megaphone } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowRight, ArrowSquareOut, Megaphone } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { BUNDLED_ANNOUNCEMENT_FEED } from "@/content/announcements";

@@ -15,7 +15,7 @@ import {
 	SpeakerHigh,
 	SpeakerLow,
 	SpeakerX,
-} from "@phosphor-icons/react";
+} from "@/components/ui/icons";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

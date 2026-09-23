@@ -8,6 +8,16 @@ const recorderSource = readFileSync(
 );
 
 describe("ScreenCaptureKitRecorder finalization coordination", () => {
+	it("finalizes on parent pipe closure as well as an explicit stop, exactly once", () => {
+		const commandLoop = recorderSource.slice(
+			recorderSource.indexOf("while let input = readLine"),
+		);
+		expect(commandLoop).toMatch(
+			/if input == "stop"\s*\{\s*break\s*\}\s*\}\s*\/\/.*?service\.stop\(\)/s,
+		);
+		expect(commandLoop.match(/service\.stop\(\)/g)).toHaveLength(1);
+	});
+
 	it("marks manual stops as participants in the shared finalization", () => {
 		expect(recorderSource).toContain("finalizeCapture(interactive: true)");
 		expect(recorderSource).toContain("finalization.outputResult.get()");
