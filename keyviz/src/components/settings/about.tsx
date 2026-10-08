@@ -3,6 +3,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { DiscordIcon, GithubIcon, LinkSquare02Icon, SparklesIcon, StarsIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { openUrl } from "@tauri-apps/plugin-opener"
+import { t } from "@/lib/i18n"
 import { motion } from "motion/react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -27,16 +28,16 @@ export const AboutPage = () => {
             if (latestVersion !== VERSION) {
                 setUpdateAvailable(true);
                 toast.success(
-                    `New version available: v${latestVersion}`,
+                    t("about.newVersion", { version: latestVersion }),
                     {
-                        action: { label: 'View', onClick: visitReleasePage }
+                        action: { label: t("about.view"), onClick: visitReleasePage }
                     }
                 );
             } else {
-                toast.info("You are using the latest version.");
+                toast.info(t("about.latest"));
             }
         } catch (error) {
-            toast.error("Failed to check for updates.");
+            toast.error(t("about.checkFailed"));
         }
         setChecking(false);
     }
@@ -105,10 +106,10 @@ export const AboutPage = () => {
                 >
                     <ItemContent>
                         <ItemTitle>
-                            <HugeiconsIcon icon={SparklesIcon} size="1em" /> Upgrade to Pro
+                            <HugeiconsIcon icon={SparklesIcon} size="1em" /> {t("about.upgrade")}
                         </ItemTitle>
                         <ItemDescription>
-                            Love Keyviz? Support its growth and unlock more with Pro.
+                            {t("about.upgrade.desc")}
                         </ItemDescription>
                     </ItemContent>
                     <ItemActions>
@@ -116,7 +117,7 @@ export const AboutPage = () => {
                             variant={hovered ? "default" : "outline"}
                             onClick={() => openUrl('https://keyviz.org/pro')}
                         >
-                            Go Pro
+                            {t("about.goPro")}
                         </Button>
                     </ItemActions>
                 </Item>
@@ -125,14 +126,14 @@ export const AboutPage = () => {
             <Item variant="muted" className="transition-all peer-hover:blur-xs">
                 <ItemContent>
                     <ItemTitle>
-                        <HugeiconsIcon icon={StarsIcon} size="1em" /> Check for updates
+                        <HugeiconsIcon icon={StarsIcon} size="1em" /> {t("about.checkUpdates")}
                     </ItemTitle>
                 </ItemContent>
                 <ItemActions>
                     {
                         updateAvailable
-                            ? <Button className="cursor-pointer" onClick={visitReleasePage}>Update Available</Button>
-                            : <Button variant="outline" onClick={checkForUpdates} disabled={checking}>Check</Button>
+                            ? <Button className="cursor-pointer" onClick={visitReleasePage}>{t("about.updateAvailable")}</Button>
+                            : <Button variant="outline" onClick={checkForUpdates} disabled={checking}>{t("about.check")}</Button>
                     }
                 </ItemActions>
             </Item>
@@ -140,10 +141,10 @@ export const AboutPage = () => {
             <Item variant="muted" className="transition-all peer-hover:blur-xs">
                 <ItemContent>
                     <ItemTitle>
-                        <HugeiconsIcon icon={GithubIcon} size="1em" /> Open Source
+                        <HugeiconsIcon icon={GithubIcon} size="1em" /> {t("about.openSource")}
                     </ItemTitle>
                     <ItemDescription className="max-w-100">
-                        Review the source code on GitHub, sponsor, star the project, or contribute to its development.
+                        {t("about.openSource.desc")}
                     </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -156,10 +157,10 @@ export const AboutPage = () => {
             <Item variant="muted" className="transition-all peer-hover:blur-xs">
                 <ItemContent>
                     <ItemTitle>
-                        <HugeiconsIcon icon={DiscordIcon} size="1em" /> Discord
+                        <HugeiconsIcon icon={DiscordIcon} size="1em" /> {t("about.discord")}
                     </ItemTitle>
                     <ItemDescription className="max-w-100">
-                        Join our Discord community.
+                        {t("about.discord.desc")}
                     </ItemDescription>
                 </ItemContent>
                 <ItemActions>

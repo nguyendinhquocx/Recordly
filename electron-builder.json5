@@ -118,7 +118,13 @@
     ],
     "icon": "icons/icons/win/icon.ico",
     "executableName": "Recordly",
-    "artifactName": "${productName}-windows-${arch}.${ext}"
+    "artifactName": "${productName}-windows-${arch}.${ext}",
+    "extraResources": [
+      {
+        "from": "keyviz/src-tauri/target/release/sidecar/recordly-keyviz.exe",
+        "to": "keyviz/recordly-keyviz.exe"
+      }
+    ]
   },
   "nsis": {
     "oneClick": false,

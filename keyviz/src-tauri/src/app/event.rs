@@ -4,6 +4,7 @@ use rdev::{listen, Button, EventType};
 use serde::Serialize;
 use tauri::{menu::MenuItem, AppHandle, Emitter, Manager, Wry};
 
+use crate::app::sidecar::emit_json;
 use crate::app::state::AppState;
 
 #[derive(Debug, Clone, Serialize)]
@@ -32,10 +33,12 @@ pub fn map_mouse_button(button: Button) -> MouseButton {
     }
 }
 
-pub fn start_listener(app_handle: AppHandle, toggle_menu_item: MenuItem<Wry>) {
+pub fn start_listener(app_handle: AppHandle, toggle_menu_item: Option<MenuItem<Wry>>) {
     thread::spawn(move || {
-        println!("Starting global input listener...");
+        eprintln!("Starting global input listener...");
 
+        // Keep a handle for the failure path; the main one is moved into the callback.
+        let error_reporter = app_handle.clone();
         if let Err(err) = listen(move |event| {
             // get app state
             let state = app_handle.state::<Mutex<AppState>>();
@@ -53,26 +56,34 @@ pub fn start_listener(app_handle: AppHandle, toggle_menu_item: MenuItem<Wry>) {
                     return;
                 }
                 // record key as pressed
-                app_state.pressed_keys.push(key_name);
-                // check if toggle shortcut is pressed
-                if app_state.toggle_shortcut == app_state.pressed_keys {
-                    app_state.toggle_listener(&app_handle, &toggle_menu_item);
+                app_state.pressed_keys.push(key_name.clone());
+                // check if toggle shortcut is pressed (standalone tray only)
+                if let Some(toggle_menu_item) = &toggle_menu_item {
+                    if app_state.toggle_shortcut == app_state.pressed_keys {
+                        app_state.toggle_listener(&app_handle, toggle_menu_item);
 
-                    if !app_state.listening {
-                        // emit key releases for all pressed keys
-                        for key_name in &app_state.pressed_keys {
-                            app_handle
-                                .emit_to(
-                                    "main",
-                                    "input-event",
-                                    InputEvent::KeyEvent {
-                                        pressed: false,
-                                        name: key_name.clone(),
-                                    },
-                                )
-                                .unwrap()
+                        if !app_state.listening {
+                            // emit key releases for all pressed keys
+                            for key_name in &app_state.pressed_keys {
+                                app_handle
+                                    .emit_to(
+                                        "main",
+                                        "input-event",
+                                        InputEvent::KeyEvent {
+                                            pressed: false,
+                                            name: key_name.clone(),
+                                        },
+                                    )
+                                    .unwrap()
+                            }
                         }
                     }
+                }
+                // Sidecar suppression (no-op in standalone: chords are empty there).
+                // Suppressed keys are never emitted and their release stays hidden.
+                if app_state.should_suppress_press(&key_name) {
+                    app_state.suppressed_active.push(key_name);
+                    return;
                 }
             } else if let EventType::KeyRelease(key) = event.event_type {
                 let key_name = format!("{:?}", key);
@@ -81,6 +92,10 @@ pub fn start_listener(app_handle: AppHandle, toggle_menu_item: MenuItem<Wry>) {
                 }
                 // remove key from pressed keys
                 app_state.pressed_keys.retain(|k| k != &key_name);
+                // hide the release of a suppressed key as well
+                if app_state.take_suppressed_release(&key_name) {
+                    return;
+                }
             }
 
             // emit event if listening
@@ -130,7 +145,21 @@ pub fn start_listener(app_handle: AppHandle, toggle_menu_item: MenuItem<Wry>) {
 
             app_handle.emit("input-event", input_event).unwrap();
         }) {
-            eprintln!("rdev listen failed: {:?}", err);
+            eprintln!("rdev listen failed: {err:?}");
+            // Sidecar contract: report the late hook failure on stdout so the
+            // parent can react instead of waiting forever. In standalone mode the
+            // capture flag is false and stdout stays untouched.
+            let sidecar_capture = error_reporter
+                .try_state::<Mutex<AppState>>()
+                .map(|state| state.lock().unwrap().capture_started)
+                .unwrap_or(false);
+            if sidecar_capture {
+                emit_json(&serde_json::json!({
+                    "type": "capture_failed",
+                    "code": "hook_install_failed",
+                    "message": format!("{err:?}"),
+                }));
+            }
         }
     });
 }
