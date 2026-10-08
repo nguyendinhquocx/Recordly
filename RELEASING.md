@@ -95,6 +95,16 @@ That is the normal path if you want “click new release and let CI do the rest.
 
 If you need to rerun publishing for an existing tag, use the manual dispatch for `.github/workflows/release.yml` and provide the existing tag.
 
+### Windows: Keyviz overlay sidecar
+
+The Windows package bundles the [Keyviz](https://github.com/rahul-sdk/keyviz) keyboard overlay as a sidecar (GPLv3, see `keyviz/LICENSE` and `THIRD_PARTY_NOTICES.md`). Build it before `build:win`:
+
+```bash
+npm run build:keyviz-sidecar
+```
+
+This installs Keyviz frontend deps with pnpm (`pnpm install --frozen-lockfile` inside `keyviz/`), builds the Tauri/Rust app in sidecar mode (`--config src-tauri/tauri.sidecar.conf.json`, distinct app identity so it never conflicts with a standalone Keyviz install), and stages `recordly-keyviz.exe`. `electron-builder` picks it up from `keyviz/src-tauri/target/release/sidecar/` via `extraResources`; `npm run smoke:packaged-binaries` verifies it is present in packaged output. Requires the Rust toolchain and pnpm on top of the Windows prerequisites above. The sidecar speaks a line-delimited JSON protocol over stdio (no TCP), only installs its input hook after Recordly explicitly requests capture, and exits when its stdin closes.
+
 ## Notes
 
 - macOS auto-updates require the `zip` target in addition to `dmg`, because `latest-mac.yml` is generated from the zipped build.
