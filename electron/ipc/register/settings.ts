@@ -122,6 +122,9 @@ export function registerSettingsHandlers() {
 	ipcMain.handle("save-shortcuts", async (_, shortcuts: unknown) => {
 		try {
 			await fs.writeFile(SHORTCUTS_FILE, JSON.stringify(shortcuts, null, 2), "utf-8");
+			// Re-apply global recording hotkeys theo config mới; kết quả qua global-shortcuts:register.
+			const { registerGlobalRecordingShortcuts } = await import("../globalShortcuts");
+			void registerGlobalRecordingShortcuts();
 			return { success: true };
 		} catch (error) {
 			console.error("Failed to save shortcuts:", error);

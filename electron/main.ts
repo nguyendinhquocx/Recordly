@@ -28,6 +28,11 @@ import {
 	killWindowsCaptureProcess,
 	registerIpcHandlers,
 } from "./ipc/handlers";
+import {
+	registerGlobalRecordingShortcuts,
+	registerGlobalShortcutIpcHandlers,
+	unregisterAllGlobalRecordingShortcuts,
+} from "./ipc/globalShortcuts";
 import { getKeyvizSidecarController } from "./ipc/keyvizSidecar";
 import { ensureMediaServer } from "./mediaServer";
 import { hardenWebContentsNavigation, shouldHardenWebContentsType } from "./navigationPolicy";
@@ -886,6 +891,7 @@ app.on("before-quit", () => {
 	void cleanupAllExportStreams();
 	// Keyviz sidecar: stdin pipe đóng khi Electron chết là đủ; dispose chủ động cho chắc.
 	void getKeyvizSidecarController().dispose();
+	unregisterAllGlobalRecordingShortcuts();
 });
 
 app.on("window-all-closed", () => {
@@ -1026,6 +1032,8 @@ app.whenReady().then(async () => {
 		}),
 	]);
 
+	registerGlobalShortcutIpcHandlers();
+	void registerGlobalRecordingShortcuts();
 	registerIpcHandlers(
 		createEditorWindowWrapper,
 		createSourceSelectorWindowWrapper,

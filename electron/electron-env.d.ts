@@ -1034,6 +1034,22 @@ interface Window {
 				binaryFound: boolean;
 			}) => void,
 		) => () => void;
+		getGlobalShortcutsSnapshot: () => Promise<{
+			editor: Record<string, unknown>;
+			recording: Record<string, unknown>;
+		}>;
+		registerGlobalRecordingHotkeys: () => Promise<
+			Array<{
+				action: string;
+				binding: unknown;
+				accelerator: string | null;
+				registered: boolean;
+				code?: string;
+			}>
+		>;
+		onRecordingHotkey: (
+			callback: (action: "start" | "stop" | "pause-resume") => void,
+		) => () => void;
 		getAppSetting: (key: string) => unknown;
 		setAppSetting: (key: string, value: unknown) => boolean;
 		setHasUnsavedChanges: (hasChanges: boolean) => void;

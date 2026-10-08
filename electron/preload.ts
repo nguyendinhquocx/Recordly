@@ -1075,6 +1075,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("keyviz:state-changed", listener);
 		return () => ipcRenderer.removeListener("keyviz:state-changed", listener);
 	},
+	getGlobalShortcutsSnapshot: () => {
+		return ipcRenderer.invoke("global-shortcuts:read");
+	},
+	registerGlobalRecordingHotkeys: () => {
+		return ipcRenderer.invoke("global-shortcuts:register");
+	},
+	onRecordingHotkey: (
+		callback: (action: "start" | "stop" | "pause-resume") => void,
+	) => {
+		const listener = (_event: Electron.IpcRendererEvent, action: "start" | "stop" | "pause-resume") =>
+			callback(action);
+		ipcRenderer.on("recording-hotkey", listener);
+		return () => ipcRenderer.removeListener("recording-hotkey", listener);
+	},
 	getAppSetting: (key: string) => {
 		const result = ipcRenderer.sendSync("app-settings:get", key) as {
 			success?: boolean;

@@ -62,7 +62,7 @@ export function LaunchWindow() {
 function LaunchWindowContent() {
 	const t = useScopedT("launch");
 	const { openId, requestOpen, requestClose } = useLaunchPopoverCoordinator();
-	const { openConfig: openShortcutsConfig } = useShortcuts();
+	const { openConfig: openShortcutsConfig, recordingShortcuts } = useShortcuts();
 	const keyviz = useKeyvizSidecar();
 
 	const {
@@ -152,6 +152,33 @@ function LaunchWindowContent() {
 	useEffect(() => {
 		window.electronAPI?.hudOverlaySetWebcamPreviewVisible?.(showRecordingWebcamPreview);
 	}, [showRecordingWebcamPreview]);
+
+	// Global shortcut hotkey = bấm nút HUD — state luôn nhất quán (spec Task 4).
+	useEffect(() => {
+		const unsubscribe = window.electronAPI?.onRecordingHotkey?.((action) => {
+			if (action === "start" && !recording && !finalizing) {
+				toggleRecording();
+			} else if (action === "stop" && recording) {
+				toggleRecording();
+			} else if (action === "pause-resume" && recording) {
+				if (paused) {
+					resumeRecording();
+				} else {
+					pauseRecording();
+				}
+			}
+		});
+		return () => unsubscribe?.();
+	}, [recording, paused, finalizing, toggleRecording, pauseRecording, resumeRecording]);
+
+	// Chord điều khiển quay bị lọc khỏi overlay trước mỗi lần quay (spec Task 3/4).
+	useEffect(() => {
+		keyviz.setSuppressedShortcuts([
+			recordingShortcuts.start,
+			recordingShortcuts.stop,
+			recordingShortcuts["pause-resume"],
+		]);
+	}, [keyviz, recordingShortcuts]);
 
 	useEffect(() => {
 		return () => {
