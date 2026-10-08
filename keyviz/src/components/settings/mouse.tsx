@@ -7,6 +7,7 @@ import { useKeyStyle } from '@/stores/key_style';
 import { ArrowExpand02Icon, Cursor01Icon, CursorCircleSelection01Icon, CursorEdit01Icon, CursorMagicSelection03FreeIcons, Drag03Icon, Link02Icon, MouseLeftClick05Icon, PaintBoardIcon, Unlink02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { NumberScrubber } from "../ui/number-input-scrub";
+import { t } from "@/lib/i18n";
 import { useState } from "react";
 import { Toggle } from "../ui/toggle";
 
@@ -21,16 +22,16 @@ export const MouseSettings = () => {
     const [offsetLinked, setOffsetLinked] = useState(true);
 
     return <div className="flex flex-col gap-y-4 p-6">
-        <h1 className="text-xl font-semibold">Mouse</h1>
+        <h1 className="text-xl font-semibold">{t("mouse.title")}</h1>
 
-        <h2 className="text-sm text-muted-foreground font-medium">Cursor Highlight</h2>
+        <h2 className="text-sm text-muted-foreground font-medium">{t("mouse.cursorHighlight")}</h2>
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={CursorMagicSelection03FreeIcons} size="1em" /> Show Clicks
+                    <HugeiconsIcon icon={CursorMagicSelection03FreeIcons} size="1em" /> {t("mouse.showClicks")}
                 </ItemTitle>
                 <ItemDescription>
-                    Animate a ring upon mouse press
+                    {t("mouse.showClicks.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -45,7 +46,7 @@ export const MouseSettings = () => {
             <Item variant="muted">
                 <ItemContent>
                     <ItemTitle>
-                        <HugeiconsIcon icon={CursorCircleSelection01Icon} size="1em" /> Size
+                        <HugeiconsIcon icon={CursorCircleSelection01Icon} size="1em" /> {t("mouse.size")}
                     </ItemTitle>
                 </ItemContent>
                 <ItemActions>
@@ -61,7 +62,7 @@ export const MouseSettings = () => {
             <Item variant="muted">
                 <ItemContent>
                     <ItemTitle>
-                        <HugeiconsIcon icon={PaintBoardIcon} size="1em" /> Color
+                        <HugeiconsIcon icon={PaintBoardIcon} size="1em" /> {t("mouse.color")}
                     </ItemTitle>
                 </ItemContent>
                 <ItemActions>
@@ -78,10 +79,10 @@ export const MouseSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={Cursor01Icon} size="1em" /> Always Highlight
+                    <HugeiconsIcon icon={Cursor01Icon} size="1em" /> {t("mouse.alwaysHighlight")}
                 </ItemTitle>
                 <ItemDescription>
-                    Permanently show the ring around the cursor
+                    {t("mouse.alwaysHighlight.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -93,14 +94,14 @@ export const MouseSettings = () => {
             </ItemActions>
         </Item>
 
-        <h2 className="text-sm text-muted-foreground font-medium mt-2">Button Indicator</h2>
+        <h2 className="text-sm text-muted-foreground font-medium mt-2">{t("mouse.indicator")}</h2>
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={MouseLeftClick05Icon} size="1em" /> Show Indicator
+                    <HugeiconsIcon icon={MouseLeftClick05Icon} size="1em" /> {t("mouse.showIndicator")}
                 </ItemTitle>
                 <ItemDescription>
-                    Display button and scroll icons next to the cursor
+                    {t("mouse.showIndicator.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -114,10 +115,10 @@ export const MouseSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={Cursor01Icon} size="1em" /> Keep Indicator
+                    <HugeiconsIcon icon={Cursor01Icon} size="1em" /> {t("mouse.keepIndicator")}
                 </ItemTitle>
                 <ItemDescription>
-                    Permanently show the icon beside the cursor
+                    {t("mouse.keepIndicator.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -132,7 +133,7 @@ export const MouseSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={CursorEdit01Icon} size="1em" /> Size
+                    <HugeiconsIcon icon={CursorEdit01Icon} size="1em" /> {t("mouse.size")}
                 </ItemTitle>
             </ItemContent>
             <ItemActions>
@@ -147,10 +148,10 @@ export const MouseSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={ArrowExpand02Icon} size="1em" /> Offset
+                    <HugeiconsIcon icon={ArrowExpand02Icon} size="1em" /> {t("mouse.offset")}
                 </ItemTitle>
                 <ItemDescription>
-                    Space from the cursor to the indicator
+                    {t("mouse.offset.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -170,7 +171,7 @@ export const MouseSettings = () => {
                             setMouseStyle({ indicatorOffsetY: mouse.indicatorOffsetX });
                         }
                     }}
-                    aria-label="Offset linked"
+                    aria-label={t("mouse.offset.linked.aria")}
                 >
                     <HugeiconsIcon icon={offsetLinked ? Link02Icon : Unlink02Icon} size="1em" />
                 </Toggle>
@@ -185,14 +186,14 @@ export const MouseSettings = () => {
             </ItemActions>
         </Item>
 
-        <h2 className="text-sm text-muted-foreground font-medium mt-2">Event</h2>
+        <h2 className="text-sm text-muted-foreground font-medium mt-2">{t("mouse.event")}</h2>
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={Drag03Icon} size="1em" /> Drag Threshold
+                    <HugeiconsIcon icon={Drag03Icon} size="1em" /> {t("mouse.dragThreshold")}
                 </ItemTitle>
                 <ItemDescription>
-                    Minimum distance in pixels to show Drag event
+                    {t("mouse.dragThreshold.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>

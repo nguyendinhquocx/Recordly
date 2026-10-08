@@ -6,7 +6,8 @@ use crate::app::state::AppState;
 
 #[tauri::command]
 pub fn log(message: String) {
-    println!("[LOG] {}", message);
+    // stderr keeps the sidecar stdout channel clean for protocol JSON.
+    eprintln!("[LOG] {}", message);
 }
 
 #[tauri::command]

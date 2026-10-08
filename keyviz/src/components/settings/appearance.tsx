@@ -11,6 +11,7 @@ import { useKeyStyle } from "@/stores/key_style";
 import { ComputerIcon, KeyframesDoubleIcon, KeyframesDoubleRemoveIcon, Link02Icon, ParagraphSpacingIcon, TextAlignLeftIcon, Time03Icon, Unlink02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { availableMonitors, Monitor } from "@tauri-apps/api/window";
+import { t } from "@/lib/i18n";
 
 
 export const AppearanceSettings = () => {
@@ -33,19 +34,19 @@ export const AppearanceSettings = () => {
     }, []);
 
     return <div className="flex flex-col gap-y-4 p-6">
-        <h1 className="text-xl font-semibold">Appearance</h1>
+        <h1 className="text-xl font-semibold">{t("appearance.title")}</h1>
 
-        <h2 className="text-sm text-muted-foreground font-medium">Position</h2>
+        <h2 className="text-sm text-muted-foreground font-medium">{t("appearance.position")}</h2>
         {
             monitors.length > 1 &&
             <Item variant="muted">
                 <ItemContent>
                     <ItemTitle>
                         <HugeiconsIcon icon={ComputerIcon} size="1em" />
-                        Display
+                        {t("appearance.display")}
                     </ItemTitle>
                     <ItemDescription>
-                        Change monitor/display for the visualisation.
+                        {t("appearance.display.desc")}
                     </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -56,14 +57,14 @@ export const AppearanceSettings = () => {
                         }}
                     >
                         <SelectTrigger className="w-32">
-                            <SelectValue placeholder="Select Display" />
+                            <SelectValue placeholder={t("appearance.display.placeholder")} />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectGroup>
                                 {
                                     monitors.map((monitor, index) => (
                                         <SelectItem key={monitor.name} value={monitor.name ?? index.toString()}>
-                                            {monitor.name ?? `Display ${index + 1}`} ({monitor.size.width}x{monitor.size.height})
+                                            {monitor.name ?? t("appearance.display.fallback", { index: index + 1 })} ({monitor.size.width}x{monitor.size.height})
                                         </SelectItem>
                                     ))
                                 }
@@ -77,10 +78,10 @@ export const AppearanceSettings = () => {
         <Item variant="muted">
             <ItemContent className="self-start">
                 <ItemTitle>
-                    <HugeiconsIcon icon={TextAlignLeftIcon} size="1em" /> Alignment
+                    <HugeiconsIcon icon={TextAlignLeftIcon} size="1em" /> {t("appearance.alignment")}
                 </ItemTitle>
                 <ItemDescription>
-                    Position of the key visualization on the screen
+                    {t("appearance.alignment.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -96,10 +97,10 @@ export const AppearanceSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={ParagraphSpacingIcon} size="1em" /> Margin
+                    <HugeiconsIcon icon={ParagraphSpacingIcon} size="1em" /> {t("appearance.margin")}
                 </ItemTitle>
                 <ItemDescription>
-                    Space from the edge of the screen
+                    {t("appearance.margin.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -121,7 +122,7 @@ export const AppearanceSettings = () => {
                             setAppearance({ marginY: appearance.marginX });
                         }
                     }}
-                    aria-label="Margin linked"
+                    aria-label={t("appearance.margin.linked.aria")}
                 >
                     <HugeiconsIcon icon={marginLinked ? Link02Icon : Unlink02Icon} size="1em" />
                 </Toggle>
@@ -142,10 +143,10 @@ export const AppearanceSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={Time03Icon} size="1em" /> Duration
+                    <HugeiconsIcon icon={Time03Icon} size="1em" /> {t("appearance.duration")}
                 </ItemTitle>
                 <ItemDescription className="max-w-84">
-                    The duration keys stay on screen (in seconds)
+                    {t("appearance.duration.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -162,7 +163,7 @@ export const AppearanceSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={KeyframesDoubleIcon} size="1em" /> Animation
+                    <HugeiconsIcon icon={KeyframesDoubleIcon} size="1em" /> {t("appearance.animation")}
                 </ItemTitle>
             </ItemContent>
             <ItemActions>
@@ -172,11 +173,11 @@ export const AppearanceSettings = () => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="fade">Fade</SelectItem>
-                            <SelectItem value="zoom">Zoom</SelectItem>
-                            <SelectItem value="float">Float</SelectItem>
-                            <SelectItem value="slide">Slide</SelectItem>
+                            <SelectItem value="none">{t("appearance.animation.none")}</SelectItem>
+                            <SelectItem value="fade">{t("appearance.animation.fade")}</SelectItem>
+                            <SelectItem value="zoom">{t("appearance.animation.zoom")}</SelectItem>
+                            <SelectItem value="float">{t("appearance.animation.float")}</SelectItem>
+                            <SelectItem value="slide">{t("appearance.animation.slide")}</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
@@ -186,10 +187,10 @@ export const AppearanceSettings = () => {
         <Item variant="muted">
             <ItemContent>
                 <ItemTitle>
-                    <HugeiconsIcon icon={KeyframesDoubleRemoveIcon} size="1em" /> Animation Speed
+                    <HugeiconsIcon icon={KeyframesDoubleRemoveIcon} size="1em" /> {t("appearance.animationSpeed")}
                 </ItemTitle>
                 <ItemDescription>
-                    Higher the value, slower the animation
+                    {t("appearance.animationSpeed.desc")}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>

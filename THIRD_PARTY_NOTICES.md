@@ -47,3 +47,26 @@ Source: https://github.com/480-Design/Solar-Icon-Set. Icons are rendered using t
 Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts).
 
 DM Sans is licensed under the SIL Open Font License, Version 1.1. The unmodified regular and italic variable fonts are sourced from [Google Fonts](https://github.com/google/fonts/tree/main/ofl/dmsans). The full license is included in [src/assets/fonts/dm-sans/OFL.txt](src/assets/fonts/dm-sans/OFL.txt).
+
+## Keyviz
+
+Recordly bundles a Keyviz sidecar executable on Windows:
+
+- Project: [Keyviz](https://github.com/mulaRahul/keyviz)
+- Upstream component: `keyviz/` (Tauri app source), built into `recordly-keyviz.exe`
+- License: GNU General Public License v3.0
+- Copyright © 2026 Rahul Mula
+- Upstream license text: [keyviz/LICENSE](keyviz/LICENSE)
+
+Recordly changes include CLI sidecar modes (`--mode=capture`, `--mode=settings`),
+a stdio JSON control protocol, on-demand input listener startup with shortcut
+suppression, a separate sidecar app identity, and Vietnamese settings UI.
+
+The Keyviz software is provided under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version. This program is distributed in
+the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+the GNU General Public License for more details. A copy of the license is
+available at <https://www.gnu.org/licenses/gpl-3.0.html> and shipped in
+[keyviz/LICENSE](keyviz/LICENSE).
