@@ -21,7 +21,7 @@ vi.mock("electron", () => ({
 	ipcMain: { handle: vi.fn() },
 }));
 
-vi.mock("../../windows", () => ({
+vi.mock("../windows", () => ({
 	getHudOverlayWindow: () => null,
 }));
 
