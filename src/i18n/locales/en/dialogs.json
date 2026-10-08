@@ -57,6 +57,7 @@
 		"instructions": "Click a shortcut then press the new key combination. Press Esc to cancel.",
 		"resetToDefaults": "Reset to defaults",
 		"cancel": "Cancel",
-		"save": "Save"
+		"save": "Save",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

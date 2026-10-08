@@ -43,7 +43,22 @@
 		"preparingFootage": "Video und Audio werden für die Zeitleiste vorbereitet."
 	},
 	"library": {
-		"videos": "Videos"
+		"videos": "Videos",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "Wiedergabe",
@@ -139,7 +154,20 @@
 		"emailLabel": "E-Mail",
 		"xLabel": "X",
 		"reportIssue": "Problem melden / Feedback senden",
-		"openFailed": "Link konnte nicht geöffnet werden."
+		"openFailed": "Link konnte nicht geöffnet werden.",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "Tastenkombinationen",
@@ -168,7 +196,10 @@
 		"experimentalBuilds": "Tipp: Aktiviere den Zugriff auf experimentelle Builds in den Einstellungen",
 		"cursorAppearance": "Tipp: Du kannst das Aussehen deines Cursors anpassen"
 	},
-	"account": { "title": "Konto", "comingSoon": "Konto demnächst verfügbar" },
+	"account": {
+		"title": "Konto",
+		"comingSoon": "Konto demnächst verfügbar"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "Es ist nichts kaputt, aber wir können kein animiertes Cursor-Overlay rendern.",
 		"description": "Ihr Gerät unterstützt keine native Erfassung. Dies kann verschiedene Gründe haben, die wir noch nicht ermittelt haben. Recordly funktioniert weiterhin, aber eine Cursor-Glättung ist nicht möglich.",

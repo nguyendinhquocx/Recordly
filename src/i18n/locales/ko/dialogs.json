@@ -57,6 +57,7 @@
 		"instructions": "단축키를 클릭한 다음 새 키 조합을 누르세요. 취소하려면 Esc를 누르세요.",
 		"resetToDefaults": "기본값으로 초기화",
 		"cancel": "취소",
-		"save": "저장"
+		"save": "저장",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

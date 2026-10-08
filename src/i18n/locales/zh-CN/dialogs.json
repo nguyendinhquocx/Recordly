@@ -57,6 +57,7 @@
 		"instructions": "点击快捷键后按下新的组合键。按 Esc 取消。",
 		"resetToDefaults": "重置为默认",
 		"cancel": "取消",
-		"save": "保存"
+		"save": "保存",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

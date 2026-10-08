@@ -15,6 +15,7 @@ import { useTimelinePresentation } from "./core/TimelinePresentation";
 import { getRegionDisplaySpan, snapRegionSpan } from "./core/clipPresentation";
 import { resolveDragEnd, resolveResizeEnd } from "./dnd/engine";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useI18n } from "@/contexts/I18nContext";
 import { cn } from "@/lib/utils";
 import { formatClipSpeedLabel } from "../clipSpeedChange";
 import { getTimeAtClipSeam, type ClipPresentation } from "./core/clipPresentation";
@@ -93,6 +94,7 @@ export default function Item({
 	children,
 }: ItemProps) {
 	const timeline = useTimelineContext();
+	const { t } = useI18n();
 	const presentation = useTimelinePresentation();
 	const clipPresentation =
 		variant === "clip" ? undefined : (suppliedPresentation ?? presentation.clips);
@@ -332,7 +334,7 @@ export default function Item({
 							pointerEvents: isClip ? "none" : "auto",
 							display: isClip && sharedLeftGrip ? "none" : undefined,
 						}}
-						title="Resize left"
+						title={t("timeline.resizeLeft")}
 					/>
 					<div
 						className={cn(
@@ -345,7 +347,7 @@ export default function Item({
 							pointerEvents: isClip ? "none" : "auto",
 							display: isClip && sharedRightGrip ? "none" : undefined,
 						}}
-						title="Resize right"
+						title={t("timeline.resizeRight")}
 					/>
 					{showAudioWaveform && waveformPeaks && (
 						<AudioWaveform

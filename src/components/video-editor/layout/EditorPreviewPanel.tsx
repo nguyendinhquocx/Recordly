@@ -363,7 +363,7 @@ export function EditorPreviewPanel(props: Props) {
 						<PopoverContent
 							side="top"
 							sideOffset={10}
-							aria-label="Preview volume"
+							aria-label={t("editor.playback.volume", "Preview volume")}
 							className="flex w-14 flex-col items-center gap-3 p-3"
 						>
 							<span className="text-[10px] tabular-nums text-muted-foreground">

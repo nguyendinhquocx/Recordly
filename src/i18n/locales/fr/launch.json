@@ -54,7 +54,9 @@
 			"upToDateTitle": "Recordly {{version}} est à jour.",
 			"availableTitle": "Recordly {{version}} est disponible.",
 			"availableGenericTitle": "Une mise à jour est disponible."
-		}
+		},
+		"microphoneLevelAria": "Microphone level",
+		"controlsAria": "Recording controls"
 	},
 	"sourceSelector": {
 		"loadingSources": "Chargement des sources...",
@@ -91,6 +93,7 @@
 		"notNow": "Plus tard",
 		"updateNow": "Mettre à jour",
 		"restartToUpdate": "Redémarrer pour mettre à jour",
-		"tryAgain": "Réessayer"
+		"tryAgain": "Réessayer",
+		"titleAria": "Recordly update"
 	}
 }

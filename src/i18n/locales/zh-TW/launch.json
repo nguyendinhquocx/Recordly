@@ -54,7 +54,9 @@
 			"upToDateTitle": "Recordly {{version}} 已是最新版本。",
 			"availableTitle": "Recordly {{version}} 已推出新版本。",
 			"availableGenericTitle": "有可用更新。"
-		}
+		},
+		"microphoneLevelAria": "Microphone level",
+		"controlsAria": "Recording controls"
 	},
 	"sourceSelector": {
 		"loadingSources": "正在載入來源...",
@@ -91,6 +93,7 @@
 		"notNow": "暫不",
 		"updateNow": "立即更新",
 		"restartToUpdate": "重新啟動以更新",
-		"tryAgain": "重試"
+		"tryAgain": "重試",
+		"titleAria": "Recordly update"
 	}
 }

@@ -57,6 +57,7 @@
 		"instructions": "Cliquez sur un raccourci puis appuyez sur la nouvelle combinaison de touches. Appuyez sur Échap pour annuler.",
 		"resetToDefaults": "Réinitialiser par défaut",
 		"cancel": "Annuler",
-		"save": "Enregistrer"
+		"save": "Enregistrer",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

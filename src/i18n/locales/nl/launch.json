@@ -54,7 +54,9 @@
 			"upToDateTitle": "Recordly {{version}} is up-to-date.",
 			"availableTitle": "Recordly {{version}} is beschikbaar.",
 			"availableGenericTitle": "Er is een update beschikbaar."
-		}
+		},
+		"microphoneLevelAria": "Microphone level",
+		"controlsAria": "Recording controls"
 	},
 	"sourceSelector": {
 		"loadingSources": "Bronnen laden...",
@@ -91,6 +93,7 @@
 		"notNow": "Niet nu",
 		"updateNow": "Nu updaten",
 		"restartToUpdate": "Opnieuw starten om te updaten",
-		"tryAgain": "Opnieuw proberen"
+		"tryAgain": "Opnieuw proberen",
+		"titleAria": "Recordly update"
 	}
 }

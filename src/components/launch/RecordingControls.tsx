@@ -36,7 +36,7 @@ export function RecordingControls({
 	const t = useScopedT("launch");
 	const actionClass = `size-9 min-w-9 rounded-full ${styles.electronNoDrag}`;
 	return (
-		<div role="group" aria-label="Recording controls" className="flex items-center gap-2">
+		<div role="group" aria-label={t("recording.controlsAria", "Recording controls")} className="flex items-center gap-2">
 			<Button
 				isIconOnly
 				variant="ghost"

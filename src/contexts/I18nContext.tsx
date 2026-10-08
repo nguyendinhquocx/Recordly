@@ -12,6 +12,7 @@ import {
 	DEFAULT_LOCALE,
 	I18N_NAMESPACES,
 	type I18nNamespace,
+	INITIAL_DEFAULT_LOCALE,
 	SUPPORTED_LOCALES,
 } from "@/i18n/config";
 import enCommon from "@/i18n/locales/en/common.json";
@@ -84,6 +85,13 @@ import zhTWLaunch from "@/i18n/locales/zh-TW/launch.json";
 import zhTWSettings from "@/i18n/locales/zh-TW/settings.json";
 import zhTWShortcuts from "@/i18n/locales/zh-TW/shortcuts.json";
 import zhTWTimeline from "@/i18n/locales/zh-TW/timeline.json";
+import viCommon from "@/i18n/locales/vi/common.json";
+import viDialogs from "@/i18n/locales/vi/dialogs.json";
+import viEditor from "@/i18n/locales/vi/editor.json";
+import viLaunch from "@/i18n/locales/vi/launch.json";
+import viSettings from "@/i18n/locales/vi/settings.json";
+import viShortcuts from "@/i18n/locales/vi/shortcuts.json";
+import viTimeline from "@/i18n/locales/vi/timeline.json";
 
 const LOCALE_STORAGE_KEY = "recordly.locale";
 
@@ -180,6 +188,15 @@ const messages: Record<AppLocale, LocaleBundle> = {
 		dialogs: zhTWDialogs,
 		shortcuts: zhTWShortcuts,
 	},
+	vi: {
+		common: viCommon,
+		launch: viLaunch,
+		editor: viEditor,
+		timeline: viTimeline,
+		settings: viSettings,
+		dialogs: viDialogs,
+		shortcuts: viShortcuts,
+	},
 } as const;
 
 interface I18nContextValue {
@@ -194,7 +211,8 @@ function isSupportedLocale(locale: string): locale is AppLocale {
 	return SUPPORTED_LOCALES.includes(locale as AppLocale);
 }
 
-function normalizeLocale(locale: string | null | undefined): AppLocale {
+/** Exported for tests. */
+export function normalizeLocale(locale: string | null | undefined): AppLocale {
 	if (!locale) {
 		return DEFAULT_LOCALE;
 	}
@@ -223,30 +241,8 @@ function normalizeLocale(locale: string | null | undefined): AppLocale {
 	return DEFAULT_LOCALE;
 }
 
-function getSystemLocale(): AppLocale {
-	if (typeof navigator === "undefined") {
-		return DEFAULT_LOCALE;
-	}
-
-	const preferredLocales = Array.isArray(navigator.languages)
-		? navigator.languages
-		: [navigator.language];
-
-	for (const locale of preferredLocales) {
-		if (typeof locale !== "string" || locale.trim().length === 0) {
-			continue;
-		}
-
-		const normalized = normalizeLocale(locale);
-		if (normalized !== DEFAULT_LOCALE || locale.toLowerCase().startsWith(DEFAULT_LOCALE)) {
-			return normalized;
-		}
-	}
-
-	return DEFAULT_LOCALE;
-}
-
-function getInitialLocale(): AppLocale {
+/** Exported for tests. First launch defaults to Vietnamese regardless of system language. */
+export function getInitialLocale(): AppLocale {
 	if (typeof window === "undefined") {
 		return DEFAULT_LOCALE;
 	}
@@ -256,7 +252,7 @@ function getInitialLocale(): AppLocale {
 		return normalizeLocale(storedLocale);
 	}
 
-	return getSystemLocale();
+	return INITIAL_DEFAULT_LOCALE;
 }
 
 function getMessageValue(source: unknown, key: string): string | undefined {
@@ -290,7 +286,8 @@ function parseKey(key: string): { namespace: I18nNamespace; path: string } {
 	return { namespace: "common", path: key };
 }
 
-function translateForLocale(
+/** Exported for tests. */
+export function translateForLocale(
 	locale: AppLocale,
 	key: string,
 	fallback?: string,

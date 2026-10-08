@@ -23,12 +23,13 @@ import {
 	type ShortcutConflict,
 	type ShortcutsConfig,
 } from "@/lib/shortcuts";
-import { useScopedT } from "../../contexts/I18nContext";
+import { useI18n, useScopedT } from "../../contexts/I18nContext";
 
 const MODIFIER_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
 
 export function ShortcutsConfigDialog() {
 	const t = useScopedT("dialogs");
+	const { t: tShortcuts } = useI18n();
 	const { shortcuts, isMac, isConfigOpen, closeConfig, setShortcuts, persistShortcuts } =
 		useShortcuts();
 
@@ -73,7 +74,7 @@ export function ShortcutsConfigDialog() {
 			setCaptureFor(null);
 
 			if (found?.type === "fixed") {
-				toast.error(t("shortcutsConfig.reserved", undefined, { label: found.label }));
+				toast.error(t("shortcutsConfig.reserved", undefined, { label: tShortcuts(found.label) }));
 				return;
 			}
 
@@ -87,7 +88,7 @@ export function ShortcutsConfigDialog() {
 
 		window.addEventListener("keydown", handleCapture, { capture: true });
 		return () => window.removeEventListener("keydown", handleCapture, { capture: true });
-	}, [captureFor, draft, t]);
+	}, [captureFor, draft, t, tShortcuts]);
 
 	const handleSwap = useCallback(() => {
 		if (!conflict || conflict.conflictWith.type !== "configurable") return;
@@ -147,7 +148,7 @@ export function ShortcutsConfigDialog() {
 								<div key={action}>
 									<div className="flex items-center justify-between gap-4 border-b border-separator py-3">
 										<span className="text-[13px] text-foreground">
-											{SHORTCUT_LABELS[action]}
+											{tShortcuts(SHORTCUT_LABELS[action])}
 										</span>
 										<Button
 											type="button"
@@ -155,8 +156,11 @@ export function ShortcutsConfigDialog() {
 											size="sm"
 											aria-label={
 												isCapturing
-													? `${SHORTCUT_LABELS[action]}: ${t("shortcutsConfig.pressAKey")}`
-													: `Change ${SHORTCUT_LABELS[action]} shortcut, currently ${formatBinding(draft[action], isMac)}`
+													? `${tShortcuts(SHORTCUT_LABELS[action])}: ${t("shortcutsConfig.pressAKey")}`
+												: t("shortcutsConfig.changeShortcut", undefined, {
+														action: tShortcuts(SHORTCUT_LABELS[action]),
+														binding: formatBinding(draft[action], isMac),
+													})
 											}
 											onClick={() => {
 												setConflict(null);
@@ -186,9 +190,9 @@ export function ShortcutsConfigDialog() {
 											<div className="flex items-center justify-between px-1 py-1.5 mb-0.5 bg-warning-soft border border-warning/20 rounded text-xs">
 												<span className="text-warning">
 													{t("shortcutsConfig.alreadyUsedBy", undefined, {
-														action: SHORTCUT_LABELS[
-															conflict.conflictWith.action
-														],
+														action: tShortcuts(
+															SHORTCUT_LABELS[conflict.conflictWith.action],
+														),
 													})}
 												</span>
 												<div className="flex gap-1.5">
@@ -225,7 +229,7 @@ export function ShortcutsConfigDialog() {
 								key={label}
 								className="flex items-center justify-between gap-4 border-b border-separator py-3 last:border-0"
 							>
-								<span className="text-[13px] text-foreground">{label}</span>
+								<span className="text-[13px] text-foreground">{tShortcuts(label)}</span>
 								<Kbd className="min-w-[90px] justify-center">{display}</Kbd>
 							</div>
 						))}

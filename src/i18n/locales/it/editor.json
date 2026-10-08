@@ -43,7 +43,22 @@
 		"preparingFootage": "Preparazione di video e audio per la timeline."
 	},
 	"library": {
-		"videos": "Video"
+		"videos": "Video",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "Riproduci",
@@ -91,7 +106,6 @@
 		"solidColor": "Colore pieno (Censura)",
 		"borderRadius": "Raggio bordo"
 	},
-
 	"fontStyles": {
 		"classic": "Classico",
 		"editor": "Editor",
@@ -140,7 +154,20 @@
 		"emailLabel": "Email",
 		"xLabel": "X",
 		"reportIssue": "Segnala problema / invia feedback",
-		"openFailed": "Apertura del link non riuscita."
+		"openFailed": "Apertura del link non riuscita.",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "Scorciatoie",
@@ -169,7 +196,10 @@
 		"experimentalBuilds": "Suggerimento: Attiva l’accesso alle build sperimentali nelle impostazioni",
 		"cursorAppearance": "Suggerimento: Puoi personalizzare l’aspetto del cursore"
 	},
-	"account": { "title": "Account", "comingSoon": "Account in arrivo" },
+	"account": {
+		"title": "Account",
+		"comingSoon": "Account in arrivo"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "Niente è rotto, ma non sarà possibile renderizzare un overlay del cursore animato.",
 		"description": "Il tuo dispositivo non supporta la cattura nativa. Le cause possono essere varie e non ancora identificate. Recordly funziona comunque, ma non è possibile applicare lo smoothing del cursore.",

@@ -54,7 +54,9 @@
 			"upToDateTitle": "У вас актуальная версия Recordly {{version}}.",
 			"availableTitle": "Доступна новая версия Recordly {{version}}.",
 			"availableGenericTitle": "Доступно обновление."
-		}
+		},
+		"microphoneLevelAria": "Microphone level",
+		"controlsAria": "Recording controls"
 	},
 	"sourceSelector": {
 		"loadingSources": "Загрузка источников...",
@@ -91,6 +93,7 @@
 		"notNow": "Не сейчас",
 		"updateNow": "Обновить сейчас",
 		"restartToUpdate": "Перезапустить для обновления",
-		"tryAgain": "Повторить"
+		"tryAgain": "Повторить",
+		"titleAria": "Recordly update"
 	}
 }

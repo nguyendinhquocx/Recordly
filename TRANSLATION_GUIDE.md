@@ -7,8 +7,12 @@ This project uses a namespace-based i18n setup so contributors can localize safe
 All locale files live under:
 
 - `src/i18n/locales/en/`
+- `src/i18n/locales/vi/`
 - `src/i18n/locales/es/`
 - `src/i18n/locales/zh-CN/`
+
+`vi` is the initial default locale on first launch; English (`en`) remains the
+source of truth for key structure and the missing-key fallback.
 
 Each locale has the same namespace files:
 

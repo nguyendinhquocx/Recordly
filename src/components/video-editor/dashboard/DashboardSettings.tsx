@@ -1,12 +1,14 @@
 import { SettingsSections, SettingsCategory } from "../SettingsSections";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { SettingsRow } from "../SettingsRow";
+import { useI18n } from "@/contexts/I18nContext";
 import { Switch } from "@/components/ui/switch";
 import { supportsHudCaptureProtection } from "@/lib/hudCaptureProtection";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 export const DashboardSettingsContext = createContext<ReactNode>(null);
 export function DashboardSettings({ onImportFile }: { onImportFile: () => Promise<void> }) {
+	const { t } = useI18n();
 	const settingsContent = useContext(DashboardSettingsContext);
 	const [directory, setDirectory] = useState("");
 	const [recordings, setRecordings] = useState("");
@@ -42,27 +44,30 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 		};
 	}, []);
 	return (
-		<section aria-label="Dashboard settings" className="dashboard-settings max-w-2xl py-10">
-			<h1 className="mb-8 text-lg font-semibold">Settings</h1>
+		<section
+			aria-label={t("settings.dashboard.sectionAria", "Dashboard settings")}
+			className="dashboard-settings max-w-2xl py-10"
+		>
+			<h1 className="mb-8 text-lg font-semibold">{t("settings.dashboard.title", "Settings")}</h1>
 			<SettingsSections categories={["general", "motion", "recording", "files", "advanced"]}>
 				<SettingsCategory category={["general", "motion", "advanced"]}>
 					{settingsContent}
 				</SettingsCategory>
 				<SettingsCategory category="files">
-					<SettingsRow title="Open video or project">
+					<SettingsRow title={t("settings.dashboard.openVideoOrProject", "Open video or project")}>
 						<Button
 							variant="secondary"
 							size="sm"
 							disabled={busy}
 							onClick={() => void run(onImportFile)}
 						>
-							Open file
+							{t("settings.dashboard.openFile", "Open file")}
 						</Button>
 					</SettingsRow>
 				</SettingsCategory>
 				<SettingsCategory category="recording">
 					<SettingsRow
-						title="Recordings folder"
+						title={t("settings.dashboard.recordingsFolder", "Recordings folder")}
 						description={
 							<span className="block truncate" title={recordings}>
 								{recordings}
@@ -79,21 +84,24 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 										await window.electronAPI.chooseRecordingsDirectory();
 									if (result.canceled) return;
 									if (!result.success || !result.path)
-										throw Error("Could not change recordings folder");
+										throw Error(t("settings.dashboard.couldNotChangeRecordingsFolder"));
 									setRecordings(result.path);
 								})
 							}
 						>
-							Change folder
+							{t("settings.dashboard.changeFolder", "Change folder")}
 						</Button>
 					</SettingsRow>
 					{captureSupported && (
 						<SettingsRow
-							title="Hide HUD from recordings"
-							description="Only while recording. The idle HUD stays visible in captures."
+							title={t("launch.recording.hideHudFromVideo", "Hide HUD from recordings")}
+							description={t(
+								"settings.dashboard.hideHudDescription",
+								"Only while recording. The idle HUD stays visible in captures.",
+							)}
 						>
 							<Switch
-								aria-label="Hide HUD from recordings"
+								aria-label={t("launch.recording.hideHudFromVideo", "Hide HUD from recordings")}
 								checked={hideHud}
 								disabled={busy}
 								onCheckedChange={(enabled) =>
@@ -103,7 +111,7 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 												enabled,
 											);
 										if (!result.success)
-											throw Error("Could not update capture protection");
+											throw Error(t("settings.dashboard.couldNotUpdateCaptureProtection"));
 										setHideHud(result.enabled);
 									})
 								}
@@ -113,7 +121,7 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 				</SettingsCategory>
 				<SettingsCategory category="advanced">
 					{import.meta.env.DEV && (
-						<SettingsRow title="Preview update UI">
+						<SettingsRow title={t("settings.dashboard.previewUpdateUi", "Preview update UI")}>
 							<Button
 								variant="secondary"
 								size="sm"
@@ -124,15 +132,21 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 									})
 								}
 							>
-								Preview
+								{t("settings.dashboard.preview", "Preview")}
 							</Button>
 						</SettingsRow>
 					)}
 				</SettingsCategory>
 				<SettingsCategory category="files">
 					<SettingsRow
-						title="Projects folder"
-						description={directory || "Named projects save automatically."}
+						title={t("settings.dashboard.projectsFolder", "Projects folder")}
+						description={
+							directory ||
+							t(
+								"settings.dashboard.projectsAutoSaveHint",
+								"Named projects save automatically.",
+							)
+						}
 					>
 						<Button
 							variant="secondary"
@@ -141,7 +155,7 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 								try {
 									const result = await window.electronAPI.getProjectsDirectory();
 									if (!result.success || !result.path)
-										throw Error("Could not open projects folder");
+										throw Error(t("settings.dashboard.couldNotOpenProjectsFolder"));
 									setDirectory(result.path);
 									await window.electronAPI.revealInFolder(result.path);
 								} catch (e) {
@@ -149,12 +163,14 @@ export function DashboardSettings({ onImportFile }: { onImportFile: () => Promis
 								}
 							}}
 						>
-							Show folder
+							{t("settings.dashboard.showFolder", "Show folder")}
 						</Button>
 					</SettingsRow>
 					<p className="text-xs text-muted-foreground">
-						Named projects save automatically. Previews refresh when you return to
-						Projects.
+						{t(
+							"settings.dashboard.projectsSaveHint",
+							"Named projects save automatically. Previews refresh when you return to Projects.",
+						)}
 					</p>
 				</SettingsCategory>
 			</SettingsSections>

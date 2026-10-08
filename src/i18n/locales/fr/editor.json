@@ -43,7 +43,22 @@
 		"preparingFootage": "Préparation de la vidéo et de l’audio pour la timeline."
 	},
 	"library": {
-		"videos": "Vidéos"
+		"videos": "Vidéos",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "Lecture",
@@ -91,7 +106,6 @@
 		"solidColor": "Couleur unie (censure)",
 		"borderRadius": "Rayon de bordure"
 	},
-
 	"fontStyles": {
 		"classic": "Classique",
 		"editor": "Éditeur",
@@ -140,7 +154,20 @@
 		"emailLabel": "Email",
 		"xLabel": "X",
 		"reportIssue": "Signaler un problème / envoyer un retour",
-		"openFailed": "Échec de l’ouverture du lien."
+		"openFailed": "Échec de l’ouverture du lien.",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "Raccourcis",
@@ -169,7 +196,10 @@
 		"experimentalBuilds": "Astuce : Activez l’accès aux versions expérimentales dans les paramètres",
 		"cursorAppearance": "Astuce : Vous pouvez personnaliser l’apparence du curseur"
 	},
-	"account": { "title": "Compte", "comingSoon": "Compte bientôt disponible" },
+	"account": {
+		"title": "Compte",
+		"comingSoon": "Compte bientôt disponible"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "Rien n'est cassé, mais nous ne pourrons pas afficher une superposition animée du curseur.",
 		"description": "Votre appareil ne prend pas en charge la capture native. Cela peut arriver pour plusieurs raisons que nous n'avons pas encore identifiées. Recordly continuera de fonctionner, mais le lissage du curseur sera impossible.",
