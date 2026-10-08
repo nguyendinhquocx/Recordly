@@ -10,9 +10,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useShortcuts } from "@/contexts/ShortcutsContext";
+import { useShortcuts, type RecordingShortcutsConfig } from "@/contexts/ShortcutsContext";
 import {
 	DEFAULT_SHORTCUTS,
+	bindingsEqual,
 	FIXED_SHORTCUTS,
 	findConflict,
 	formatBinding,
@@ -23,18 +24,42 @@ import {
 	type ShortcutConflict,
 	type ShortcutsConfig,
 } from "@/lib/shortcuts";
+import {
+	DEFAULT_RECORDING_SHORTCUTS,
+	RECORDING_SHORTCUT_ACTIONS,
+	type RecordingShortcutAction,
+} from "@/contexts/ShortcutsContext";
 import { useI18n, useScopedT } from "../../contexts/I18nContext";
 
 const MODIFIER_KEYS = new Set(["Control", "Shift", "Alt", "Meta"]);
 
+const RECORDING_LABEL_KEYS: Record<RecordingShortcutAction, string> = {
+	start: "shortcutsConfig.recordingStart",
+	stop: "shortcutsConfig.recordingStop",
+	"pause-resume": "shortcutsConfig.recordingPauseResume",
+};
+
 export function ShortcutsConfigDialog() {
 	const t = useScopedT("dialogs");
 	const { t: tShortcuts } = useI18n();
-	const { shortcuts, isMac, isConfigOpen, closeConfig, setShortcuts, persistShortcuts } =
-		useShortcuts();
+	const {
+		shortcuts,
+		recordingShortcuts,
+		isMac,
+		isConfigOpen,
+		closeConfig,
+		setShortcuts,
+		persistShortcuts,
+		persistRecordingShortcuts,
+	} = useShortcuts();
 
 	const [draft, setDraft] = useState<ShortcutsConfig>(shortcuts);
+	const [recordingDraft, setRecordingDraft] = useState<RecordingShortcutsConfig>(recordingShortcuts);
 	const [captureFor, setCaptureFor] = useState<ShortcutAction | null>(null);
+	const [captureForRecording, setCaptureForRecording] = useState<RecordingShortcutAction | null>(
+		null,
+	);
+	const [registerFailures, setRegisterFailures] = useState<Record<string, boolean>>({});
 	const [conflict, setConflict] = useState<{
 		forAction: ShortcutAction;
 		pending: ShortcutBinding;
@@ -44,10 +69,27 @@ export function ShortcutsConfigDialog() {
 	useEffect(() => {
 		if (isConfigOpen) {
 			setDraft(shortcuts);
+			setRecordingDraft(recordingShortcuts);
 			setCaptureFor(null);
+			setCaptureForRecording(null);
 			setConflict(null);
+			setRegisterFailures({});
 		}
-	}, [isConfigOpen, shortcuts]);
+	}, [isConfigOpen, shortcuts, recordingShortcuts]);
+
+	/** Chord recording có trùng binding cho không (dùng cho editor capture + recording capture). */
+	const findRecordingConflict = useCallback(
+		(binding: ShortcutBinding, exceptAction?: RecordingShortcutAction) => {
+			for (const action of RECORDING_SHORTCUT_ACTIONS) {
+				if (action === exceptAction) continue;
+				if (recordingDraft[action] && bindingsEqual(recordingDraft[action], binding)) {
+					return action;
+				}
+			}
+			return null;
+		},
+		[recordingDraft],
+	);
 
 	useEffect(() => {
 		if (!captureFor) return;
@@ -71,10 +113,20 @@ export function ShortcutsConfigDialog() {
 			};
 
 			const found = findConflict(binding, captureFor, draft);
+			const recordingConflict = findRecordingConflict(binding);
 			setCaptureFor(null);
 
 			if (found?.type === "fixed") {
 				toast.error(t("shortcutsConfig.reserved", undefined, { label: tShortcuts(found.label) }));
+				return;
+			}
+
+			if (recordingConflict) {
+				toast.error(
+					t("shortcutsConfig.conflictsWithRecording", undefined, {
+						action: t(RECORDING_LABEL_KEYS[recordingConflict]),
+					}),
+				);
 				return;
 			}
 
@@ -88,7 +140,64 @@ export function ShortcutsConfigDialog() {
 
 		window.addEventListener("keydown", handleCapture, { capture: true });
 		return () => window.removeEventListener("keydown", handleCapture, { capture: true });
-	}, [captureFor, draft, t, tShortcuts]);
+	}, [captureFor, draft, t, tShortcuts, findRecordingConflict]);
+
+	// Capture phím cho global recording hotkeys — cùng cơ chế với editor.
+	useEffect(() => {
+		if (!captureForRecording) return;
+
+		const handleCapture = (e: KeyboardEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			if (e.key === "Escape") {
+				setCaptureForRecording(null);
+				return;
+			}
+
+			if (MODIFIER_KEYS.has(e.key)) return;
+
+			const binding: ShortcutBinding = {
+				key: e.key.toLowerCase(),
+				...(e.ctrlKey || e.metaKey ? { ctrl: true } : {}),
+				...(e.shiftKey ? { shift: true } : {}),
+				...(e.altKey ? { alt: true } : {}),
+			};
+			const target = captureForRecording;
+			setCaptureForRecording(null);
+
+			// Không cho trùng fixed shortcut và shortcut editor.
+			const editorConflict = findConflict(binding, "addZoom", draft);
+			if (editorConflict?.type === "fixed") {
+				toast.error(t("shortcutsConfig.reserved", undefined, { label: tShortcuts(editorConflict.label) }));
+				return;
+			}
+			if (editorConflict?.type === "configurable") {
+				toast.error(
+					t("shortcutsConfig.alreadyUsedBy", undefined, {
+						action: tShortcuts(SHORTCUT_LABELS[editorConflict.action]),
+					}),
+				);
+				return;
+			}
+
+			const recordingConflict = findRecordingConflict(binding, target);
+			if (recordingConflict) {
+				toast.error(
+					t("shortcutsConfig.conflictsWithRecording", undefined, {
+						action: t(RECORDING_LABEL_KEYS[recordingConflict]),
+					}),
+				);
+				return;
+			}
+
+			setRecordingDraft((prev) => ({ ...prev, [target]: binding }));
+			setRegisterFailures((prev) => ({ ...prev, [target]: false }));
+		};
+
+		window.addEventListener("keydown", handleCapture, { capture: true });
+		return () => window.removeEventListener("keydown", handleCapture, { capture: true });
+	}, [captureForRecording, draft, t, tShortcuts, findRecordingConflict]);
 
 	const handleSwap = useCallback(() => {
 		if (!conflict || conflict.conflictWith.type !== "configurable") return;
@@ -106,12 +215,29 @@ export function ShortcutsConfigDialog() {
 	const handleSave = useCallback(async () => {
 		setShortcuts(draft);
 		await persistShortcuts(draft);
+		// Persist recording hotkeys (schema mới) rồi đăng ký global; lỗi hiển thị cạnh binding.
+		await persistRecordingShortcuts(recordingDraft);
+		try {
+			const results = await window.electronAPI?.registerGlobalRecordingHotkeys?.();
+			if (results) {
+				const failures: Record<string, boolean> = {};
+				for (const result of results) {
+					failures[result.action] = !result.registered && result.code !== "unset";
+				}
+				setRegisterFailures(failures);
+				if (Object.values(failures).some(Boolean)) {
+					toast.warning(t("shortcutsConfig.globalUnavailable"));
+				}
+			}
+		} catch {
+			/* IPC missing — vẫn giữ config */
+		}
 		toast.success(t("shortcutsConfig.saved"));
-		closeConfig();
-	}, [draft, setShortcuts, persistShortcuts, closeConfig, t]);
+	}, [draft, recordingDraft, setShortcuts, persistShortcuts, persistRecordingShortcuts, t]);
 
 	const handleReset = useCallback(() => {
 		setDraft({ ...DEFAULT_SHORTCUTS });
+		setRecordingDraft({ ...DEFAULT_RECORDING_SHORTCUTS });
 		toast.info(t("shortcutsConfig.resetNotice"));
 	}, [t]);
 
@@ -217,6 +343,64 @@ export function ShortcutsConfigDialog() {
 										)}
 								</div>
 							);
+						})}
+					</div>
+
+					<div className="space-y-0.5 mt-2">
+						<p className="mb-3 text-[13px] font-medium text-foreground">
+							{t("shortcutsConfig.recordingGroup")}
+						</p>
+						{RECORDING_SHORTCUT_ACTIONS.map((action) => {
+							const isCapturing = captureForRecording === action;
+							const registerFailed = registerFailures[action] === true;
+							return (
+								<div key={action}>
+									<div className="flex items-center justify-between gap-4 border-b border-separator py-3">
+										<span className="text-[13px] text-foreground">
+											{t(RECORDING_LABEL_KEYS[action])}
+										</span>
+										<Button
+											type="button"
+											variant="secondary"
+											size="sm"
+											aria-label={
+												isCapturing
+													? `${t(RECORDING_LABEL_KEYS[action])}: ${t("shortcutsConfig.pressAKey")}`
+													: t("shortcutsConfig.changeShortcut", undefined, {
+															action: t(RECORDING_LABEL_KEYS[action]),
+															binding: formatBinding(recordingDraft[action], isMac),
+														})
+												}
+											onClick={() => {
+													setConflict(null);
+													setCaptureForRecording(isCapturing ? null : action);
+												}}
+											title={
+												isCapturing
+													? t("shortcutsConfig.pressEscToCancel")
+													: t("shortcutsConfig.clickToChange")
+												}
+											className={[
+												"px-2 py-1 text-xs min-w-[90px] text-center select-none",
+												isCapturing
+													? "animate-pulse"
+													: registerFailed
+														? "text-warning"
+														: "cursor-pointer",
+											].join(" ")}
+										>
+											{isCapturing
+												? t("shortcutsConfig.pressAKey")
+												: formatBinding(recordingDraft[action], isMac)}
+										</Button>
+									</div>
+									{registerFailed && (
+										<p className="px-1 py-1 mb-0.5 text-xs text-warning">
+											{t("shortcutsConfig.globalUnavailable")}
+										</p>
+									)}
+							</div>
+						);
 						})}
 					</div>
 

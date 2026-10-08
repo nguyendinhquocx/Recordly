@@ -58,6 +58,13 @@
 		"resetToDefaults": "Auf Standardwerte zurücksetzen",
 		"cancel": "Abbrechen",
 		"save": "Speichern",
-		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}",
+		"recordingGroup": "Recording hotkeys (global)",
+		"recordingStart": "Start recording",
+		"recordingStop": "Stop recording",
+		"recordingPauseResume": "Pause / resume recording",
+		"globalActive": "Active system-wide",
+		"globalUnavailable": "Could not register - another app may be holding this combination",
+		"conflictsWithRecording": "Already used by recording hotkey: {{action}}"
 	}
 }

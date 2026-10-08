@@ -62,7 +62,17 @@ const READY_TIMEOUT_MS = 10_000;
 const CAPTURE_STARTED_TIMEOUT_MS = 10_000;
 const QUIT_GRACE_MS = 3_000;
 const SIDECAR_EXECUTABLE_NAME = "recordly-keyviz.exe";
-const NATIVE_BIN_DIR = path.join("electron", "native", "bin", "keyviz");
+
+/**
+ * Candidates khớp W2 build contract:
+ * - packaged: extraResources "keyviz/recordly-keyviz.exe" trong resources
+ * - dev: keyviz/src-tauri/target/release/sidecar/recordly-keyviz.exe (từ repo root)
+ */
+const SIDECAR_CANDIDATE_PATHS = [
+	path.join("keyviz", SIDECAR_EXECUTABLE_NAME),
+	path.join("keyviz", "src-tauri", "target", "release", "sidecar", SIDECAR_EXECUTABLE_NAME),
+	path.join("electron", "native", "bin", "keyviz", SIDECAR_EXECUTABLE_NAME),
+];
 
 export const KEYVIZ_SIDECAR_LINE_EVENT = "keyviz-sidecar-line";
 
@@ -78,7 +88,7 @@ function pathExists(candidate: string): boolean {
 	}
 }
 
-/** Resolve đường dẫn sidecar exe: env override -> packaged resources -> dev cwd. */
+/** Resolve đường dẫn sidecar exe: env override -> packaged resources -> dev build output. */
 export function resolveKeyvizSidecarBinaryPath(): string | null {
 	const candidates: string[] = [];
 	const configuredPath = process.env.RECORDLY_KEYVIZ_SIDECAR_EXE;
@@ -88,18 +98,18 @@ export function resolveKeyvizSidecarBinaryPath(): string | null {
 
 	const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
 	if (resourcesPath) {
-		candidates.push(
-			path.join(resourcesPath, "app.asar.unpacked", NATIVE_BIN_DIR, SIDECAR_EXECUTABLE_NAME),
-			path.join(resourcesPath, NATIVE_BIN_DIR, SIDECAR_EXECUTABLE_NAME),
-		);
+		for (const relativePath of SIDECAR_CANDIDATE_PATHS) {
+			candidates.push(
+				path.join(resourcesPath, "app.asar.unpacked", relativePath),
+				path.join(resourcesPath, relativePath),
+			);
+		}
 	}
 
 	candidates.push(
-		path.join(process.cwd(), NATIVE_BIN_DIR, SIDECAR_EXECUTABLE_NAME),
-		path.join(
-			app.getAppPath().replace(/app\.asar$/, "app.asar.unpacked"),
-			NATIVE_BIN_DIR,
-			SIDECAR_EXECUTABLE_NAME,
+		...SIDECAR_CANDIDATE_PATHS.map((relativePath) => path.join(process.cwd(), relativePath)),
+		...SIDECAR_CANDIDATE_PATHS.map((relativePath) =>
+			path.join(app.getAppPath().replace(/app\.asar$/, "app.asar.unpacked"), relativePath),
 		),
 	);
 

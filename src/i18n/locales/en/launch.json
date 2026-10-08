@@ -95,5 +95,20 @@
 		"restartToUpdate": "Restart to update",
 		"tryAgain": "Try again",
 		"titleAria": "Recordly update"
+	},
+	"keyviz": {
+		"toggleOn": "Enable keyboard overlay",
+		"toggleOff": "Disable keyboard overlay",
+		"configMenu": "Recording configuration",
+		"configShortcuts": "Keyboard shortcuts",
+		"configKeyvizSettings": "Keyviz settings",
+		"errorTitle": "Keyboard overlay failed to start",
+		"errorMessage": "The keyboard overlay (Keyviz) could not start. Choose how to continue before recording.",
+		"errorRetry": "Try again",
+		"errorSkip": "Record without overlay",
+		"errorCancel": "Cancel recording",
+		"exitBanner": "Keyboard overlay stopped unexpectedly during recording.",
+		"exitContinue": "Continue without overlay",
+		"exitStopAndSave": "Stop and save"
 	}
 }

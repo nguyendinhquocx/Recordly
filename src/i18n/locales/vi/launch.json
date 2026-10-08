@@ -95,5 +95,20 @@
 		"restartToUpdate": "Khởi động lại để cập nhật",
 		"tryAgain": "Thử lại",
 		"titleAria": "Cập nhật Recordly"
+	},
+	"keyviz": {
+		"toggleOn": "Bật overlay phím bấm",
+		"toggleOff": "Tắt overlay phím bấm",
+		"configMenu": "Cấu hình quay",
+		"configShortcuts": "Phím tắt",
+		"configKeyvizSettings": "Cài đặt Keyviz",
+		"errorTitle": "Không khởi động được overlay phím",
+		"errorMessage": "Overlay phím bấm (Keyviz) không khởi động được. Chọn cách tiếp tục trước khi quay.",
+		"errorRetry": "Thử lại",
+		"errorSkip": "Quay không overlay",
+		"errorCancel": "Hủy quay",
+		"exitBanner": "Overlay phím bấm bị ngắt giữa lúc quay.",
+		"exitContinue": "Tiếp tục không overlay",
+		"exitStopAndSave": "Dừng và lưu"
 	}
 }
