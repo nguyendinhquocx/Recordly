@@ -57,6 +57,7 @@
 		"instructions": "Klicken Sie auf ein Tastaturkürzel und drücken Sie dann die neue Tastenkombination. Drücken Sie Esc, um abzubrechen.",
 		"resetToDefaults": "Auf Standardwerte zurücksetzen",
 		"cancel": "Abbrechen",
-		"save": "Speichern"
+		"save": "Speichern",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

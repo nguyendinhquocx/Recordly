@@ -1,7 +1,12 @@
+/** Missing-key fallback for every locale. */
 export const DEFAULT_LOCALE = "en" as const;
+
+/** Locale used on first launch when nothing is stored in `recordly.locale`. */
+export const INITIAL_DEFAULT_LOCALE = "vi" as const;
 
 export const SUPPORTED_LOCALES = [
 	"en",
+	"vi",
 	"es",
 	"fr",
 	"de",

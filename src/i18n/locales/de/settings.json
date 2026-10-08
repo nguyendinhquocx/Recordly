@@ -258,5 +258,22 @@
 		"title": "Updates",
 		"experimental": "Experimentelle Updates",
 		"saveFailed": "Update-Kanal konnte nicht geändert werden."
+	},
+	"dashboard": {
+		"sectionAria": "Dashboard settings",
+		"title": "Settings",
+		"openVideoOrProject": "Open video or project",
+		"openFile": "Open file",
+		"recordingsFolder": "Recordings folder",
+		"changeFolder": "Change folder",
+		"hideHudDescription": "Only while recording. The idle HUD stays visible in captures.",
+		"previewUpdateUi": "Preview update UI",
+		"preview": "Preview",
+		"projectsFolder": "Projects folder",
+		"projectsAutoSaveHint": "Named projects save automatically.",
+		"projectsSaveHint": "Named projects save automatically. Previews refresh when you return to Projects.",
+		"couldNotChangeRecordingsFolder": "Could not change recordings folder",
+		"couldNotUpdateCaptureProtection": "Could not update capture protection",
+		"couldNotOpenProjectsFolder": "Could not open projects folder"
 	}
 }

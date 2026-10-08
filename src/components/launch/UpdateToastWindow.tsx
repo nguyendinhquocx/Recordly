@@ -158,7 +158,7 @@ export function UpdateToastWindow({
 
 	return (
 		<div className={`${styles.window} launch-theme`}>
-			<Card className="w-full flex-row gap-3" aria-live="polite" aria-label="Recordly update">
+			<Card className="w-full flex-row gap-3" aria-live="polite" aria-label={t("updateToast.titleAria", "Recordly update")}>
 				<div
 					className={`${styles.icon} ${payload.phase === "error" ? styles.iconError : ""}`}
 				>
@@ -184,7 +184,10 @@ export function UpdateToastWindow({
 
 					{payload.phase === "downloading" ? (
 						<div className={styles.progressBlock}>
-							<ProgressBar aria-label="Downloading update" value={progress}>
+							<ProgressBar
+							aria-label={t("launch.updateToast.downloadingTitle")}
+							value={progress}
+						>
 								<ProgressBar.Track>
 									<ProgressBar.Fill />
 								</ProgressBar.Track>

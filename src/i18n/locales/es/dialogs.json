@@ -57,6 +57,7 @@
 		"instructions": "Haz clic en un atajo y luego presiona la nueva combinación de teclas. Presiona Esc para cancelar.",
 		"resetToDefaults": "Restablecer valores predeterminados",
 		"cancel": "Cancelar",
-		"save": "Guardar"
+		"save": "Guardar",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

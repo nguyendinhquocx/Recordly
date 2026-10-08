@@ -20,30 +20,33 @@ export interface ShortcutBinding {
 export type ShortcutsConfig = Record<ShortcutAction, ShortcutBinding>;
 
 export interface FixedShortcut {
+	/** i18n key in the `shortcuts` namespace — translate with t() at render time. */
 	label: string;
 	display: string;
 	bindings: ShortcutBinding[];
 }
 
 export const FIXED_SHORTCUTS: FixedShortcut[] = [
-	{ label: "Cycle Annotations Forward", display: "Tab", bindings: [{ key: "tab" }] },
+	{ label: "shortcuts.actions.cycleForward", display: "Tab", bindings: [{ key: "tab" }] },
 	{
-		label: "Cycle Annotations Backward",
+		label: "shortcuts.actions.cycleBackward",
 		display: "Shift + Tab",
 		bindings: [{ key: "tab", shift: true }],
 	},
 	{
-		label: "Delete Selected (alt)",
+		label: "shortcuts.actions.deleteSelectedAlt",
 		display: "Del / ⌫",
 		bindings: [{ key: "delete" }, { key: "backspace" }],
 	},
-	{ label: "Pan Timeline", display: "Shift + Scroll", bindings: [] },
-	{ label: "Zoom Timeline", display: "Ctrl + Scroll", bindings: [] },
+	{ label: "shortcuts.actions.panTimeline", display: "Shift + Scroll", bindings: [] },
+	{ label: "shortcuts.actions.zoomTimeline", display: "Ctrl + Scroll", bindings: [] },
 ];
 
 export type ShortcutConflict =
 	| { type: "configurable"; action: ShortcutAction }
 	| { type: "fixed"; label: string };
+
+// `label` on a fixed conflict is an i18n key in the `shortcuts` namespace.
 
 export function bindingsEqual(a: ShortcutBinding, b: ShortcutBinding): boolean {
 	return (
@@ -81,13 +84,14 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
 	playPause: { key: " " },
 };
 
+/** i18n keys in the `shortcuts` namespace — translate with t() at render time. */
 export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
-	addZoom: "Add Zoom",
-	splitClip: "Split Clip",
-	addAnnotation: "Add Annotation",
-	addKeyframe: "Add Keyframe",
-	deleteSelected: "Delete Selected",
-	playPause: "Play / Pause",
+	addZoom: "shortcuts.actions.addZoom",
+	splitClip: "shortcuts.actions.splitClip",
+	addAnnotation: "shortcuts.actions.addAnnotation",
+	addKeyframe: "shortcuts.actions.addKeyframe",
+	deleteSelected: "shortcuts.actions.deleteSelected",
+	playPause: "shortcuts.actions.playPause",
 };
 
 export function matchesShortcut(

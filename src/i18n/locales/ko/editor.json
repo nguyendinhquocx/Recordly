@@ -43,7 +43,22 @@
 		"preparingFootage": "타임라인에 사용할 영상과 오디오를 준비하고 있습니다."
 	},
 	"library": {
-		"videos": "동영상"
+		"videos": "동영상",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "재생",
@@ -61,7 +76,6 @@
 		"arrow": "화살표",
 		"blur": "흐리게",
 		"textContent": "텍스트 내용",
-
 		"textPlaceholder": "텍스트를 입력하세요...",
 		"fontStyle": "글꼴 스타일",
 		"selectStyle": "스타일 선택",
@@ -92,7 +106,6 @@
 		"solidColor": "단색 (검열)",
 		"borderRadius": "테두리 반경"
 	},
-
 	"fontStyles": {
 		"classic": "클래식",
 		"editor": "에디터",
@@ -141,7 +154,20 @@
 		"emailLabel": "이메일",
 		"xLabel": "X",
 		"reportIssue": "이슈 등록 / 피드백 보내기",
-		"openFailed": "링크를 열지 못했습니다."
+		"openFailed": "링크를 열지 못했습니다.",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "단축키",
@@ -170,7 +196,10 @@
 		"experimentalBuilds": "팁: 설정에서 실험적 빌드 액세스를 켜 보세요",
 		"cursorAppearance": "팁: 커서 모양을 사용자 지정할 수 있습니다"
 	},
-	"account": { "title": "계정", "comingSoon": "계정 기능 준비 중" },
+	"account": {
+		"title": "계정",
+		"comingSoon": "계정 기능 준비 중"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "문제가 생긴 것은 아니지만, 애니메이션 커서 오버레이를 렌더링할 수 없습니다.",
 		"description": "이 장치는 네이티브 캡처를 지원하지 않습니다. 아직 확인하지 못한 여러 이유가 있을 수 있습니다. Recordly는 계속 작동하지만 커서 스무딩은 사용할 수 없습니다.",

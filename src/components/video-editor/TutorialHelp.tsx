@@ -15,7 +15,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { useScopedT } from "@/contexts/I18nContext";
+import { useI18n, useScopedT } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";
 import { formatBinding, SHORTCUT_ACTIONS, SHORTCUT_LABELS } from "@/lib/shortcuts";
 import { formatShortcut } from "@/utils/platformUtils";
@@ -83,6 +83,7 @@ export function KeyboardShortcutsDialog({
 }: KeyboardShortcutsDialogProps) {
 	const { shortcuts, isMac, openConfig } = useShortcuts();
 	const t = useScopedT("editor");
+	const { t: tShortcuts } = useI18n();
 	const [scrollLabels, setScrollLabels] = useState({
 		pan: "Shift + Scroll",
 		zoom: "Ctrl + Scroll",
@@ -129,7 +130,7 @@ export function KeyboardShortcutsDialog({
 								className="flex items-center justify-between gap-3 rounded-lg border border-foreground/5 bg-foreground/5 px-3 py-2.5"
 							>
 								<span className="text-muted-foreground">
-									{SHORTCUT_LABELS[action]}
+									{tShortcuts(SHORTCUT_LABELS[action])}
 								</span>
 								<kbd className="rounded border border-foreground/10 bg-foreground/10 px-2 py-1 font-mono text-[#2563EB]">
 									{formatBinding(shortcuts[action], isMac)}

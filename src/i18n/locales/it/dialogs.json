@@ -57,6 +57,7 @@
 		"instructions": "Clicca su una scorciatoia, poi premi la nuova combinazione di tasti. Premi Esc per annullare.",
 		"resetToDefaults": "Ripristina predefinite",
 		"cancel": "Annulla",
-		"save": "Salva"
+		"save": "Salva",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

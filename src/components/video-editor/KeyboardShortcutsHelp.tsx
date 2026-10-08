@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Gear as Settings2, Question as HelpCircle } from "@/components/ui/icons";
 import { useEffect, useState } from "react";
-import { useScopedT } from "@/contexts/I18nContext";
+import { useI18n, useScopedT } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";
 import { formatBinding, SHORTCUT_ACTIONS, SHORTCUT_LABELS } from "@/lib/shortcuts";
 import { formatShortcut } from "@/utils/platformUtils";
@@ -11,6 +11,7 @@ import { formatShortcut } from "@/utils/platformUtils";
 export function KeyboardShortcutsHelp() {
 	const { shortcuts, isMac, openConfig } = useShortcuts();
 	const t = useScopedT("editor");
+	const { t: tShortcuts } = useI18n();
 
 	const [scrollLabels, setScrollLabels] = useState({
 		pan: "Shift + Scroll",
@@ -51,7 +52,7 @@ export function KeyboardShortcutsHelp() {
 				<div className="space-y-1.5 text-[10px]">
 					{SHORTCUT_ACTIONS.map((action) => (
 						<div key={action} className="flex items-center justify-between">
-							<span className="text-muted-foreground">{SHORTCUT_LABELS[action]}</span>
+							<span className="text-muted-foreground">{tShortcuts(SHORTCUT_LABELS[action])}</span>
 							<Kbd>{formatBinding(shortcuts[action], isMac)}</Kbd>
 						</div>
 					))}

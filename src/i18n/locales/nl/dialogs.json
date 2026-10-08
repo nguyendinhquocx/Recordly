@@ -57,6 +57,7 @@
 		"instructions": "Klik op een sneltoets en druk vervolgens op de nieuwe toetscombinatie. Druk op Esc om te annuleren.",
 		"resetToDefaults": "Standaardwaarden herstellen",
 		"cancel": "Annuleren",
-		"save": "Opslaan"
+		"save": "Opslaan",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

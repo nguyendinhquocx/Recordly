@@ -57,6 +57,7 @@
 		"instructions": "Выберите сочетание и нажмите новую комбинацию клавиш. Нажмите Esc для отмены.",
 		"resetToDefaults": "Сбросить по умолчанию",
 		"cancel": "Отмена",
-		"save": "Сохранить"
+		"save": "Сохранить",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }

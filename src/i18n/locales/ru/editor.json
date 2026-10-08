@@ -43,7 +43,22 @@
 		"preparingFootage": "Подготовка видео и звука для шкалы времени."
 	},
 	"library": {
-		"videos": "Видео"
+		"videos": "Видео",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "Воспроизвести",
@@ -91,7 +106,6 @@
 		"solidColor": "Сплошной цвет (цензура)",
 		"borderRadius": "Скругление углов"
 	},
-
 	"fontStyles": {
 		"classic": "Классический",
 		"editor": "Базовый",
@@ -140,7 +154,20 @@
 		"emailLabel": "Email",
 		"xLabel": "X",
 		"reportIssue": "Сообщить о проблеме / отправить отзыв",
-		"openFailed": "Не удалось открыть ссылку."
+		"openFailed": "Не удалось открыть ссылку.",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "Горячие клавиши",
@@ -169,7 +196,10 @@
 		"experimentalBuilds": "Совет: Включите доступ к экспериментальным сборкам в настройках",
 		"cursorAppearance": "Совет: Внешний вид курсора можно настроить"
 	},
-	"account": { "title": "Учётная запись", "comingSoon": "Учётная запись скоро появится" },
+	"account": {
+		"title": "Учётная запись",
+		"comingSoon": "Учётная запись скоро появится"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "Всё в порядке, но мы не можем отобразить анимированное наложение курсора.",
 		"description": "Устройство не поддерживает нативный захват изображения. Запись продолжится, но без сглаживания курсора.",

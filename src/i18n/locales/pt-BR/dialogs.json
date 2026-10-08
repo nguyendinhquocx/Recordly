@@ -57,6 +57,7 @@
 		"instructions": "Clique em um atalho e pressione a nova combinação de teclas. Pressione Esc para cancelar.",
 		"resetToDefaults": "Redefinir para padrão",
 		"cancel": "Cancelar",
-		"save": "Salvar"
+		"save": "Salvar",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}"
 	}
 }
