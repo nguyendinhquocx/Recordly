@@ -46,28 +46,22 @@ function resolveBinaryFound(): string | null {
 }
 
 describe("bindingToSidecarChord", () => {
-	it("maps ctrl+alt+shift+r to normalized chord", () => {
-		expect(
-			bindingToSidecarChord({ key: "r", ctrl: true, alt: true, shift: true }),
-		).toEqual<SidecarChord>({ modifiers: ["Control", "Alt", "Shift"], key: "R" });
+	it("maps ctrl+alt+shift+r to normalized chord tokens", () => {
+		expect(bindingToSidecarChord({ key: "r", ctrl: true, alt: true, shift: true })).toEqual<
+			SidecarChord
+		>(["Control", "Alt", "Shift", "R"]);
 	});
 
 	it("maps space and arrow keys", () => {
-		expect(bindingToSidecarChord({ key: " " })).toEqual<SidecarChord>({
-			modifiers: [],
-			key: "Space",
-		});
-		expect(bindingToSidecarChord({ key: "arrowup", ctrl: true })).toEqual<SidecarChord>({
-			modifiers: ["Control"],
-			key: "UpArrow",
-		});
+		expect(bindingToSidecarChord({ key: " " })).toEqual<SidecarChord>(["Space"]);
+		expect(bindingToSidecarChord({ key: "arrowup", ctrl: true })).toEqual<SidecarChord>([
+			"Control",
+			"UpArrow",
+		]);
 	});
 
 	it("maps enter alias to Return", () => {
-		expect(bindingToSidecarChord({ key: "enter" })).toEqual<SidecarChord>({
-			modifiers: [],
-			key: "Return",
-		});
+		expect(bindingToSidecarChord({ key: "enter" })).toEqual<SidecarChord>(["Return"]);
 	});
 });
 
@@ -96,8 +90,8 @@ describe("KeyvizSidecarController", () => {
 		});
 
 		const suppressed: SidecarChord[] = [
-			{ modifiers: ["Control", "Alt", "Shift"], key: "R" },
-			{ modifiers: ["Control", "Alt", "Shift"], key: "S" },
+			["Control", "Alt", "Shift", "R"],
+			["Control", "Alt", "Shift", "S"],
 		];
 
 		const promise = controller.prepareCapture(suppressed);

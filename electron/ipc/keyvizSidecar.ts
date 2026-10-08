@@ -8,18 +8,18 @@ import { app } from "electron";
  *
  * Protocol: stdio line-delimited JSON (KHÔNG TCP).
  * - Sidecar -> Recordly : {"type":"ready"} | {"type":"capture_started"} | {"type":"capture_failed","code":"...","message":"..."}
- * - Recordly -> Sidecar : {"type":"start_capture","suppressed_shortcuts":[{"modifiers":[...],"key":"R"},...]} | {"type":"quit"}
+ * - Recordly -> Sidecar : {"type":"start_capture","suppressed_shortcuts":[["Control","Alt","Shift","R"],...]} | {"type":"quit"}
  *
  * Lifecycle theo spec: sidecar khởi động ở trạng thái overlay-ready NHƯNG chưa hook;
  * input listener chỉ bắt đầu sau lệnh start_capture. Pause/stop/cancel/app-exit gửi quit
  * và đợi process thoát (hard-kill fallback); resume spawn lại sidecar.
  *
- * Suppression chord contract (giữa Electron và sidecar):
- *   modifiers: subset của "Alt" | "Control" | "Meta" | "Shift"
- *   key: token chuẩn hóa, vd "A".."Z", "0".."9", "F1".."F24", "Space", "Return",
- *        "Tab", "Escape", "Backspace", "Delete", "Home", "End", "PageUp", "PageDown",
- *        "UpArrow", "DownArrow", "LeftArrow", "RightArrow".
- * Sidecar tự map token này sang rdev::Key variants (Control -> ControlLeft|ControlRight, ...).
+ * Suppression chord contract (W2 sidecar): mảng chord, mỗi chord là mảng token
+ * chấp nhận alias (không phân biệt hoa thường): "Control"/"Ctrl", "Alt", "Shift",
+ * "Meta"/"Win"; chữ đơn "A"-"Z"; số đơn "0"-"9"; "F1".."F24"; "Space", "Return"/"Enter",
+ * "Tab", "Escape"/"Esc", "Backspace", "Delete"/"Del", "Home", "End", "PageUp", "PageDown",
+ * "UpArrow"/"DownArrow"/"LeftArrow"/"RightArrow" (hoặc "Up"/"Down"/"Left"/"Right").
+ * Sidecar normalize alias sang rdev::Key variants (Control -> ControlLeft|ControlRight...).
  */
 
 export type KeyvizSidecarState =
@@ -31,10 +31,8 @@ export type KeyvizSidecarState =
 	| "failed"
 	| "exited";
 
-export interface SidecarChord {
-	modifiers: string[];
-	key: string;
-}
+/** Chord dạng mảng token alias, vd ["Control","Alt","Shift","R"] — sidecar tự normalize. */
+export type SidecarChord = string[];
 
 export interface KeyvizPrepareSuccess {
 	ok: true;
@@ -115,7 +113,7 @@ export function resolveKeyvizSidecarBinaryPath(): string | null {
 
 /**
  * Chuyển ShortcutBinding (renderer, vd {key:"r", ctrl:true, alt:true, shift:true})
- * thành SidecarChord chuẩn hóa gửi qua protocol.
+ * thành chord mảng token theo contract W2 sidecar.
  */
 export function bindingToSidecarChord(binding: {
 	key: string;
@@ -124,11 +122,11 @@ export function bindingToSidecarChord(binding: {
 	alt?: boolean;
 	meta?: boolean;
 }): SidecarChord {
-	const modifiers: string[] = [];
-	if (binding.ctrl) modifiers.push("Control");
-	if (binding.meta) modifiers.push("Meta");
-	if (binding.alt) modifiers.push("Alt");
-	if (binding.shift) modifiers.push("Shift");
+	const chord: string[] = [];
+	if (binding.ctrl) chord.push("Control");
+	if (binding.meta) chord.push("Meta");
+	if (binding.alt) chord.push("Alt");
+	if (binding.shift) chord.push("Shift");
 
 	const keyLabels: Record<string, string> = {
 		" ": "Space",
@@ -156,8 +154,9 @@ export function bindingToSidecarChord(binding: {
 
 	const normalizedKey = binding.key.toLowerCase();
 	const key = keyLabels[normalizedKey] ?? normalizedKey.toUpperCase();
+	chord.push(key);
 
-	return { modifiers, key };
+	return chord;
 }
 
 type SpawnFn = (command: string, args: string[]) => ChildProcessWithoutNullStreams;

@@ -253,6 +253,36 @@ flowchart TD
   - `README.md`, `RELEASING.md` — bổ sung cách dùng/build/test đúng ngôn ngữ và convention của repo.
   - `THIRD_PARTY_NOTICES.md`, `keyviz/LICENSE` — bảo toàn notice.
 
+## Multi-agent Assignment
+
+### Safety summary
+- Mode: Supervised parallel (2 worker worktree) cho Task 1 + Task 2; Task 3 → Task 4 tuần tự; Task 5 parent solo.
+- Max parallel workers: 2.
+- Không delegate: push fork (parent duy nhất làm), commit chính trên branch feature (parent merge), quyết định protocol/security.
+
+### File overlap check (pre-dispatch)
+- W1 (Task 1 i18n) ∩ W2 (Task 2 sidecar): không overlap. W1: `src/i18n/**`, `src/contexts/I18nContext.tsx`, `src/lib/shortcuts.ts`, `src/components/video-editor/ShortcutsConfigDialog.tsx`, `KeyboardShortcutsHelp.tsx`, `TutorialHelp.tsx`, rà hardcode text trong `src/components/**` (chỉ text/i18n, không thêm control). W2: `keyviz/**`, `scripts/build-keyviz-sidecar.mjs`, `package.json` (chỉ thêm script), `electron-builder.json5`, `THIRD_PARTY_NOTICES.md`.
+- W1 ∩ W3 (Task 3 HUD): `LaunchWindow.tsx` — Task 1 KHÔNG đụng LaunchWindow (HUD text đã qua i18n key sẵn; nếu sót hardcode ở LaunchWindow thì ghi lại trong report để Task 3 xử lý chung), tránh same-file race.
+- Task 4 phụ thuộc Task 3 (cùng `LaunchWindow.tsx`, `electron/main.ts`, `ShortcutsConfigDialog.tsx`) → tuần tự sau khi merge W1.
+
+### Worker Slice W1 — i18n Việt hóa (Task 1)
+Role: Worker; Risk tier: T2; worktree=true.
+Files allowed: `src/i18n/**`, `src/contexts/I18nContext.tsx`, `src/lib/shortcuts.ts`, `src/components/video-editor/ShortcutsConfigDialog.tsx`, `src/components/video-editor/KeyboardShortcutsHelp.tsx`, `src/components/video-editor/TutorialHelp.tsx`, `src/components/**` (chỉ text/i18n sweep, không đụng `LaunchWindow*`), `src/i18n/locales/vi/**` (mới), test mới nếu cần.
+Files forbidden: `keyviz/**`, `electron/**`, `LaunchWindow.tsx`, `LaunchWindow.module.css`, `package.json`, `electron-builder.json5`.
+Verify gate: `npm run i18n:check && npm run typecheck` + locale resolution tests pass.
+
+### Worker Slice W2 — Keyviz sidecar (Task 2)
+Role: Worker; Risk tier: T2; worktree=true.
+Files allowed: `keyviz/**`, `scripts/build-keyviz-sidecar.mjs` (mới), `package.json` (chỉ thêm script), `electron-builder.json5`, `THIRD_PARTY_NOTICES.md`.
+Files forbidden: `src/**`, `electron/**` (trừ không đụng gì), `README.md`, `RELEASING.md` (Task 5 làm).
+Verify gate: `cargo check`/`cargo build` trong `keyviz/src-tauri` pass + sidecar binary chạy 2 mode smoke (stdout protocol) + `node scripts/build-keyviz-sidecar.mjs` chạy được từ checkout sạch.
+
+### Thứ tự thực hiện
+1. W1 + W2 song song (worktree, base = baseline commit 5f6b6115).
+2. Parent scope-check diff từng worker + merge vào `feature/recordly-keyviz-integration`.
+3. Parent/worker Task 3 → verify → Task 4 → verify (tuần tự, same-file risk).
+4. Task 5 parent solo: build:win, smoke, docs, commit/push.
+
 ## Checkpoints
 - Sau Task 0: checkout fork nằm đúng path, Keyviz source đã verify; old folder đã xóa; parent có các deletion đã được user chốt nhưng chưa stage/commit. Branch feature chỉ tạo sau khi user duyệt spec.
 - Sau Task 1: i18n parity + locale first-run/save tests pass; chụp HUD và Settings tiếng Việt.
