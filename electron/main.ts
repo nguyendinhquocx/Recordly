@@ -28,6 +28,7 @@ import {
 	killWindowsCaptureProcess,
 	registerIpcHandlers,
 } from "./ipc/handlers";
+import { getKeyvizSidecarController } from "./ipc/keyvizSidecar";
 import { ensureMediaServer } from "./mediaServer";
 import { hardenWebContentsNavigation, shouldHardenWebContentsType } from "./navigationPolicy";
 import { shouldGrantDisplayCapture, shouldGrantMediaPermission } from "./permissionPolicy";
@@ -883,6 +884,8 @@ app.on("before-quit", () => {
 	showCursor();
 	cleanupNativeVideoExportSessions();
 	void cleanupAllExportStreams();
+	// Keyviz sidecar: stdin pipe đóng khi Electron chết là đủ; dispose chủ động cho chắc.
+	void getKeyvizSidecarController().dispose();
 });
 
 app.on("window-all-closed", () => {

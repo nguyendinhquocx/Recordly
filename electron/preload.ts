@@ -1058,6 +1058,23 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	saveShortcuts: (shortcuts: unknown) => {
 		return ipcRenderer.invoke("save-shortcuts", shortcuts);
 	},
+	keyvizGetStatus: () => {
+		return ipcRenderer.invoke("keyviz:get-status");
+	},
+	keyvizPrepareCapture: (suppressedShortcuts: unknown) => {
+		return ipcRenderer.invoke("keyviz:prepare-capture", suppressedShortcuts);
+	},
+	keyvizRelease: () => {
+		return ipcRenderer.invoke("keyviz:release");
+	},
+	keyvizOpenSettings: () => {
+		return ipcRenderer.invoke("keyviz:open-settings");
+	},
+	onKeyvizStateChanged: (callback: (status: unknown) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status);
+		ipcRenderer.on("keyviz:state-changed", listener);
+		return () => ipcRenderer.removeListener("keyviz:state-changed", listener);
+	},
 	getAppSetting: (key: string) => {
 		const result = ipcRenderer.sendSync("app-settings:get", key) as {
 			success?: boolean;

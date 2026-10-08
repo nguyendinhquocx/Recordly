@@ -1,7 +1,9 @@
 import {
 	ArrowClockwiseIcon,
 	CaretUpIcon,
+	GearSix,
 	House,
+	Keyboard,
 	DotsThreeVerticalIcon,
 	MicrophoneIcon,
 	MicrophoneSlashIcon,
@@ -16,6 +18,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useScopedT } from "../../contexts/I18nContext";
+import { ShortcutsProvider, useShortcuts } from "../../contexts/ShortcutsContext";
+import { useKeyvizSidecar } from "../../hooks/useKeyvizSidecar";
 import { useMicrophoneDevices } from "../../hooks/useMicrophoneDevices";
 import { useScreenRecorder } from "../../hooks/useScreenRecorder";
 import { useVideoDevices } from "../../hooks/useVideoDevices";
@@ -33,11 +37,13 @@ import { useRecordingTimer } from "./hooks/useRecordingTimer";
 import { useWebcamPreviewOverlay } from "./hooks/useWebcamPreviewOverlay";
 import styles from "./LaunchWindow.module.css";
 import { MarqueeText } from "./MarqueeText";
+import { KeyvizStartupErrorDialog, KeyvizUnexpectedExitBanner } from "./KeyvizDialogs";
 import { CountdownPopover } from "./popovers/CountdownPopover";
 import {
 	LaunchPopoverCoordinatorProvider,
 	useLaunchPopoverCoordinator,
 } from "./popovers/LaunchPopoverCoordinator";
+import { DropdownItem, HudPopover } from "./popovers/PopoverScaffold";
 import { MicPopover } from "./popovers/MicPopover";
 import { SourcePopover } from "./popovers/SourcePopover";
 import { WebcamPopover } from "./popovers/WebcamPopover";
@@ -46,14 +52,18 @@ import { RecordingControls } from "./RecordingControls";
 export function LaunchWindow() {
 	return (
 		<LaunchPopoverCoordinatorProvider>
-			<LaunchWindowContent />
+			<ShortcutsProvider>
+				<LaunchWindowContent />
+			</ShortcutsProvider>
 		</LaunchPopoverCoordinatorProvider>
 	);
 }
 
 function LaunchWindowContent() {
 	const t = useScopedT("launch");
-	const { openId, requestOpen } = useLaunchPopoverCoordinator();
+	const { openId, requestOpen, requestClose } = useLaunchPopoverCoordinator();
+	const { openConfig: openShortcutsConfig } = useShortcuts();
+	const keyviz = useKeyvizSidecar();
 
 	const {
 		recording,
@@ -77,7 +87,7 @@ function LaunchWindowContent() {
 		countdownDelay,
 		setCountdownDelay,
 		preparePermissions,
-	} = useScreenRecorder();
+	} = useScreenRecorder(keyviz);
 
 	const { elapsed, formatTime } = useRecordingTimer(recording, paused);
 	const hudContentRef = useRef<HTMLDivElement>(null);
@@ -364,6 +374,67 @@ function LaunchWindowContent() {
 			/>
 
 			<Button
+				variant="ghost"
+				size="icon"
+				iconSize="lg"
+				aria-pressed={keyviz.enabled === true}
+				aria-label={
+					keyviz.enabled
+						? t("keyviz.toggleOff", "Disable keyboard overlay")
+						: t("keyviz.toggleOn", "Enable keyboard overlay")
+				}
+				title={
+					keyviz.enabled
+						? t("keyviz.toggleOff", "Disable keyboard overlay")
+						: t("keyviz.toggleOn", "Enable keyboard overlay")
+				}
+				className={keyviz.enabled ? "text-accent" : ""}
+				onClick={() => keyviz.setEnabled(!keyviz.enabled)}
+			>
+				<Keyboard weight={keyviz.enabled ? "fill" : "regular"} className="size-5" />
+			</Button>
+
+			<HudPopover
+				open={openId === "keyviz-config"}
+				onOpenChange={(open) =>
+					open ? requestOpen("keyviz-config") : requestClose("keyviz-config")
+				}
+				trigger={
+					<Button
+						variant="ghost"
+						size="icon"
+						iconSize="lg"
+						aria-label={t("keyviz.configMenu", "Recording configuration")}
+						title={t("keyviz.configMenu", "Recording configuration")}
+						className={
+							openId === "keyviz-config"
+								? "border-[var(--launch-border-strong)] bg-[var(--launch-hover)]"
+								: ""
+						}
+					>
+						<GearSix
+							weight={openId === "keyviz-config" ? "fill" : "regular"}
+							className="size-5"
+						/>
+					</Button>
+				}
+			>
+				<div className="flex min-w-52 flex-col gap-1 p-2">
+					<DropdownItem onClick={() => openShortcutsConfig()} icon={<Keyboard size={16} />}>
+						{t("keyviz.configShortcuts", "Keyboard shortcuts")}
+					</DropdownItem>
+					<DropdownItem
+						onClick={() => {
+							void keyviz.openSettings();
+						}}
+						icon={<GearSix size={16} />}
+					>
+						{t("keyviz.configKeyvizSettings", "Keyviz settings")}
+					</DropdownItem>
+				</div>
+			</HudPopover>
+
+			<Button
 				type="button"
 				variant="destructive"
 				size="icon"
@@ -442,6 +513,7 @@ function LaunchWindowContent() {
 								transform: `translate3d(${recordingHudOffset.x}px, ${recordingHudOffset.y}px, 0)`,
 							}}
 						>
+							<KeyvizUnexpectedExitBanner keyviz={keyviz} onStopRecording={toggleRecording} />
 							<motion.div
 								ref={hudBarRef}
 								layout={shouldAnimateHudLayout}
@@ -546,6 +618,7 @@ function LaunchWindowContent() {
 					</div>
 				</div>
 			</div>
+			<KeyvizStartupErrorDialog keyviz={keyviz} />
 		</HudInteractionContext.Provider>
 	);
 }

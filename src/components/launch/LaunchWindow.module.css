@@ -101,6 +101,19 @@
 	color: var(--foreground);
 }
 
+.keyvizExitBanner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+	padding: 6px 10px;
+	border: 1px solid var(--launch-border-strong);
+	border-radius: 10px;
+	background: var(--launch-surface, rgba(24, 24, 28, 0.92));
+	color: var(--foreground);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
 .finalizingSpin {
 	color: var(--accent);
 	animation: finalizingSpin 0.9s linear infinite;

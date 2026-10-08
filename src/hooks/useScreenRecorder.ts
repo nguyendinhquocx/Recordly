@@ -373,7 +373,13 @@ async function createAudioInputDeviceSnapshot(): Promise<
 	return audioInputs.length > 0 ? audioInputs : null;
 }
 
-export function useScreenRecorder(): UseScreenRecorderReturn {
+/** Điều khiển Keyviz sidecar tùy chọn được HUD truyền vào (Windows only). */
+export interface KeyvizSidecarRecorderControl {
+	prepareForRecording: () => Promise<{ mode: "off" | "ok" | "skipped" | "cancelled" }>;
+	release: () => Promise<void>;
+}
+
+export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScreenRecorderReturn {
 	const [recording, setRecording] = useState(false);
 	const [paused, setPaused] = useState(false);
 	const [starting, setStarting] = useState(false);
@@ -1266,6 +1272,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const stopRecording = useRef(() => {
 		recordingStartGeneration.current += 1;
 		setPaused(false);
+		void keyviz?.release();
 		if (nativeScreenRecording.current && nativeWarmStartActive.current) {
 			setRecording(false);
 			void (async () => {
@@ -1686,6 +1693,17 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				cleanupCapturedMedia();
 				await stopWebcamRecorder();
 				return;
+			}
+
+			// Keyviz overlay phải capture_started TRƯỚC khi capture frame đầu (spec).
+			// User chọn hủy khi lỗi → abort start; chọn skip → quay không overlay.
+			if (keyviz) {
+				const keyvizOutcome = await keyviz.prepareForRecording();
+				if (keyvizOutcome.mode === "cancelled" || startWasCancelled()) {
+					cleanupCapturedMedia();
+					await stopWebcamRecorder();
+					return;
+				}
 			}
 
 			const { selectedSource, useNativeMacScreenCapture, useNativeWindowsCapture, micLabel } =
@@ -2304,6 +2322,8 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				const boundaryMs = Date.now();
 				markRecordingPaused(boundaryMs);
 				setPaused(true);
+				// Pause = nhả input listener (spec: quit sidecar, resume spawn lại).
+				void keyviz?.release();
 				try {
 					await window.electronAPI.pauseCursorCapture(boundaryMs);
 				} catch (error) {
@@ -2321,6 +2341,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				const boundaryMs = Date.now();
 				markRecordingPaused(boundaryMs);
 				setPaused(true);
+				void keyviz?.release();
 				try {
 					await window.electronAPI.pauseCursorCapture(boundaryMs);
 				} catch (error) {
@@ -2343,6 +2364,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					return;
 				}
 
+				// Resume: spawn lại sidecar + capture_started TRƯỚC khi tiếp tục capture (spec).
+				if (keyviz) {
+					await keyviz.prepareForRecording();
+				}
 				if (webcamRecorder.current?.state === "paused") {
 					webcamRecorder.current.resume();
 				}
@@ -2364,6 +2389,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				webcamRecorder.current.resume();
 			}
 			void (async () => {
+				if (keyviz) {
+					await keyviz.prepareForRecording();
+				}
 				const boundaryMs = Date.now();
 				markRecordingResumed(boundaryMs);
 				setPaused(false);
@@ -2380,6 +2408,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		recordingStartGeneration.current += 1;
 		if (!recording) return;
 		setPaused(false);
+		void keyviz?.release();
 		markRecordingResumed(Date.now());
 
 		// Discard webcam recording regardless of recording mode
