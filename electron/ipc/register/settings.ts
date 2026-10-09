@@ -5,6 +5,7 @@ import { hasAppSetting, readAppSettingsStore, writeAppSettingsStore } from "../.
 import { hideCursor } from "../../cursorHider";
 import { createCountdownWindow } from "../../windows";
 import { COUNTDOWN_SETTINGS_FILE, RECORDINGS_SETTINGS_FILE, SHORTCUTS_FILE } from "../constants";
+import { writeProjectFileAtomically } from "../project/atomicSave";
 import {
 	createRecordingPreferencesStore,
 	type RecordingPreferencesPatch,
@@ -121,7 +122,9 @@ export function registerSettingsHandlers() {
 
 	ipcMain.handle("save-shortcuts", async (_, shortcuts: unknown) => {
 		try {
-			await fs.writeFile(SHORTCUTS_FILE, JSON.stringify(shortcuts, null, 2), "utf-8");
+			// Atomic swap (temp + fsync + rename + .bak): crash giữa lúc ghi không thể để
+			// lại shortcuts.json cụt, thứ bị đọc thành null rồi âm thầm reset mọi binding.
+			await writeProjectFileAtomically(SHORTCUTS_FILE, JSON.stringify(shortcuts, null, 2));
 			for (const window of BrowserWindow.getAllWindows()) {
 				if (!window.isDestroyed()) {
 					window.webContents.send("shortcuts:changed", shortcuts);

@@ -144,8 +144,19 @@ export async function readGlobalShortcutsSnapshot(): Promise<GlobalShortcutsSnap
 }
 
 let registeredAccelerators = new Map<RecordingHotkeyAction, string>();
-let suspensionDepth = 0;
+/** webContents.id -> số suspend đang mở từ contents đó; -1 cho lời gọi không có owner. */
+const suspensionCounts = new Map<number, number>();
 let lastRegistrationResults: GlobalShortcutRegistration[] = [];
+
+const OWNERLESS_SUSPENDER_ID = -1;
+
+function totalOpenSuspensions(): number {
+	let total = 0;
+	for (const count of suspensionCounts.values()) {
+		total += count;
+	}
+	return total;
+}
 
 function unregisterRegisteredAccelerators(): void {
 	for (const [, oldAccelerator] of registeredAccelerators) {
@@ -172,13 +183,13 @@ function dispatchToHud(action: RecordingHotkeyAction): void {
 }
 
 export async function registerGlobalRecordingShortcuts(): Promise<GlobalShortcutRegistration[]> {
-	if (suspensionDepth > 0) {
+	if (totalOpenSuspensions() > 0) {
 		return lastRegistrationResults;
 	}
 	unregisterRegisteredAccelerators();
 
 	const snapshot = await readGlobalShortcutsSnapshot();
-	if (suspensionDepth > 0) {
+	if (totalOpenSuspensions() > 0) {
 		return lastRegistrationResults;
 	}
 	const results: GlobalShortcutRegistration[] = [];
@@ -228,22 +239,47 @@ export async function registerGlobalRecordingShortcuts(): Promise<GlobalShortcut
 }
 
 /** Temporarily release hotkeys so capture-mode dialogs can receive the chords. */
-export function suspendGlobalRecordingShortcuts(): void {
-	suspensionDepth += 1;
-	if (suspensionDepth === 1) {
+export function suspendGlobalRecordingShortcuts(ownerId?: number): void {
+	const id = typeof ownerId === "number" ? ownerId : OWNERLESS_SUSPENDER_ID;
+	suspensionCounts.set(id, (suspensionCounts.get(id) ?? 0) + 1);
+	if (totalOpenSuspensions() === 1) {
 		unregisterRegisteredAccelerators();
 	}
 }
 
 /** Re-register after the final chord-capture surface closes. */
-export async function resumeGlobalRecordingShortcuts(): Promise<GlobalShortcutRegistration[]> {
-	suspensionDepth = Math.max(0, suspensionDepth - 1);
-	return suspensionDepth === 0 ? registerGlobalRecordingShortcuts() : lastRegistrationResults;
+export async function resumeGlobalRecordingShortcuts(
+	ownerId?: number,
+): Promise<GlobalShortcutRegistration[]> {
+	const id = typeof ownerId === "number" ? ownerId : OWNERLESS_SUSPENDER_ID;
+	const openCount = suspensionCounts.get(id) ?? 0;
+	if (openCount <= 1) {
+		suspensionCounts.delete(id);
+	} else {
+		suspensionCounts.set(id, openCount - 1);
+	}
+	return totalOpenSuspensions() === 0 ? registerGlobalRecordingShortcuts() : lastRegistrationResults;
+}
+
+/**
+ * Renderer chết giữa lúc capture chord sẽ không bao giờ gửi resume tương ứng;
+ * khi owner cuối cùng biến mất, tự nhả suspension và đăng ký lại hotkeys
+ * thay vì để chúng chết im lặng đến khi restart app.
+ * Trả true nếu contents này thực sự đang giữ suspension.
+ */
+export async function handleRendererProcessGone(contentsId: number): Promise<boolean> {
+	if (!suspensionCounts.delete(contentsId)) {
+		return false;
+	}
+	if (totalOpenSuspensions() === 0) {
+		await registerGlobalRecordingShortcuts();
+	}
+	return true;
 }
 
 /** Gỡ các accelerator do module này đăng ký khi app quit; không đụng module khác. */
 export function unregisterAllGlobalRecordingShortcuts(): void {
-	suspensionDepth = 0;
+	suspensionCounts.clear();
 	unregisterRegisteredAccelerators();
 	lastRegistrationResults = [];
 }
@@ -251,9 +287,11 @@ export function unregisterAllGlobalRecordingShortcuts(): void {
 export function registerGlobalShortcutIpcHandlers(): void {
 	ipcMain.handle("global-shortcuts:register", async () => registerGlobalRecordingShortcuts());
 	ipcMain.on("global-shortcuts:suspend", (event) => {
-		suspendGlobalRecordingShortcuts();
+		suspendGlobalRecordingShortcuts(event.sender.id);
 		event.returnValue = true;
 	});
-	ipcMain.handle("global-shortcuts:resume", async () => resumeGlobalRecordingShortcuts());
+	ipcMain.handle("global-shortcuts:resume", async (event) =>
+		resumeGlobalRecordingShortcuts(event.sender.id),
+	);
 	ipcMain.handle("global-shortcuts:read", async () => readGlobalShortcutsSnapshot());
 }

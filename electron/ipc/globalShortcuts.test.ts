@@ -27,6 +27,7 @@ vi.mock("../windows", () => ({
 
 import {
 	bindingToAccelerator,
+	handleRendererProcessGone,
 	registerGlobalRecordingShortcuts,
 	resumeGlobalRecordingShortcuts,
 	suspendGlobalRecordingShortcuts,
@@ -177,5 +178,48 @@ describe("registerGlobalRecordingShortcuts", () => {
 		const results = await registerGlobalRecordingShortcuts();
 		expect(results.map((result) => result.registered)).toEqual([true, true, true]);
 		expect(globalShortcutMock.register).toHaveBeenCalledTimes(3);
+	});
+});
+
+describe("suspension leak recovery", () => {
+	beforeEach(() => {
+		readFileMock.mockReset();
+		globalShortcutMock.register.mockClear().mockReturnValue(true);
+		globalShortcutMock.unregister.mockClear();
+		globalShortcutMock.isRegistered.mockClear().mockReturnValue(false);
+		globalShortcutMock.unregisterAll.mockClear();
+		unregisterAllGlobalRecordingShortcuts();
+	});
+
+	it("ignores renderer exits that never suspended hotkeys", async () => {
+		await expect(handleRendererProcessGone(99)).resolves.toBe(false);
+		expect(globalShortcutMock.register).not.toHaveBeenCalled();
+	});
+
+	it("re-registers hotkeys when the suspending renderer dies mid chord-capture", async () => {
+		mockShortcutsFile({});
+		await registerGlobalRecordingShortcuts();
+		const callsBefore = globalShortcutMock.register.mock.calls.length;
+		globalShortcutMock.isRegistered.mockReturnValue(true);
+
+		suspendGlobalRecordingShortcuts(7);
+		await expect(handleRendererProcessGone(7)).resolves.toBe(true);
+
+		expect(globalShortcutMock.unregister).toHaveBeenCalledTimes(3);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(callsBefore + 3);
+	});
+
+	it("keeps suspension while another capture surface is still open", async () => {
+		mockShortcutsFile({});
+		await registerGlobalRecordingShortcuts();
+		const callsBefore = globalShortcutMock.register.mock.calls.length;
+
+		suspendGlobalRecordingShortcuts(1);
+		suspendGlobalRecordingShortcuts(2);
+		await expect(handleRendererProcessGone(1)).resolves.toBe(true);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(callsBefore);
+
+		await resumeGlobalRecordingShortcuts(2);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(callsBefore + 3);
 	});
 });

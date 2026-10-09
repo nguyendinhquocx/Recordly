@@ -29,6 +29,7 @@ import {
 	registerIpcHandlers,
 } from "./ipc/handlers";
 import {
+	handleRendererProcessGone,
 	registerGlobalRecordingShortcuts,
 	registerGlobalShortcutIpcHandlers,
 	unregisterAllGlobalRecordingShortcuts,
@@ -93,6 +94,18 @@ app.on("web-contents-created", (_event, contents) => {
 	}
 
 	hardenWebContentsNavigation(contents, (url) => shell.openExternal(url));
+});
+
+// Renderer chết giữa lúc capture chord sẽ không bao giờ gửi resume tương ứng;
+// nhả suspension của nó để global hotkeys không chết im lặng đến khi restart app.
+app.on("web-contents-created", (_event, contents) => {
+	const releaseSuspension = () => {
+		handleRendererProcessGone(contents.id).catch((error) => {
+			console.error("Failed to resume global shortcuts after renderer exit:", error);
+		});
+	};
+	contents.on("render-process-gone", releaseSuspension);
+	contents.on("destroyed", releaseSuspension);
 });
 
 function configureGpuAccelerationSwitches() {
