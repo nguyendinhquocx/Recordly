@@ -1,10 +1,6 @@
 Language: EN | [简中 (upstream docs)](README.zh-CN.md)
 
 <p align="center">
-  <img width="220" alt="Recordly Logo" src="https://github.com/user-attachments/assets/414b8838-6731-45d4-a815-6e3c0aa1fe52" />
-</p>
-
-<p align="center">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-2563eb?style=flat-square" alt="AGPL 3.0 license" />
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-111827?style=flat-square" alt="Platforms" />
   <img src="https://img.shields.io/badge/key%20overlay-Windows%2010%2B-059669?style=flat-square" alt="Keyboard overlay: Windows 10+" />
@@ -42,13 +38,6 @@ Recording captures a display or a single window, then jumps into a timeline edit
 - MP4 and GIF export
 - `.recordly` project files preserve editor state
 - Extensions system (upstream marketplace)
-
-<p>
-  <img src="./docs/media/feature1.gif" width="450" alt="Recordly cursor and zoom demo">
-</p>
-<p>
-  <img src="./docs/media/feature2.gif" width="450" alt="Recordly webcam overlay demo">
-</p>
 
 ---
 
