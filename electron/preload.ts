@@ -1058,6 +1058,56 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	saveShortcuts: (shortcuts: unknown) => {
 		return ipcRenderer.invoke("save-shortcuts", shortcuts);
 	},
+	onShortcutsChanged: (callback: (shortcuts: Record<string, unknown>) => void) => {
+		const listener = (
+			_event: Electron.IpcRendererEvent,
+			shortcuts: Record<string, unknown>,
+		) => callback(shortcuts);
+		ipcRenderer.on("shortcuts:changed", listener);
+		return () => ipcRenderer.removeListener("shortcuts:changed", listener);
+	},
+	keyvizGetStatus: () => {
+		return ipcRenderer.invoke("keyviz:get-status");
+	},
+	keyvizPrepareCapture: (suppressedShortcuts: unknown) => {
+		return ipcRenderer.invoke("keyviz:prepare-capture", suppressedShortcuts);
+	},
+	keyvizRelease: () => {
+		return ipcRenderer.invoke("keyviz:release");
+	},
+	keyvizOpenSettings: () => {
+		return ipcRenderer.invoke("keyviz:open-settings");
+	},
+	onKeyvizStateChanged: (callback: (status: unknown) => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status);
+		ipcRenderer.on("keyviz:state-changed", listener);
+		return () => ipcRenderer.removeListener("keyviz:state-changed", listener);
+	},
+	onKeyvizUnexpectedExit: (callback: () => void) => {
+		const listener = () => callback();
+		ipcRenderer.on("keyviz:unexpected-exit", listener);
+		return () => ipcRenderer.removeListener("keyviz:unexpected-exit", listener);
+	},
+	getGlobalShortcutsSnapshot: () => {
+		return ipcRenderer.invoke("global-shortcuts:read");
+	},
+	registerGlobalRecordingHotkeys: () => {
+		return ipcRenderer.invoke("global-shortcuts:register");
+	},
+	suspendGlobalRecordingHotkeys: () => {
+		return ipcRenderer.sendSync("global-shortcuts:suspend") === true;
+	},
+	resumeGlobalRecordingHotkeys: () => {
+		return ipcRenderer.invoke("global-shortcuts:resume");
+	},
+	onRecordingHotkey: (
+		callback: (action: "start" | "stop" | "pause-resume") => void,
+	) => {
+		const listener = (_event: Electron.IpcRendererEvent, action: "start" | "stop" | "pause-resume") =>
+			callback(action);
+		ipcRenderer.on("recording-hotkey", listener);
+		return () => ipcRenderer.removeListener("recording-hotkey", listener);
+	},
 	getAppSetting: (key: string) => {
 		const result = ipcRenderer.sendSync("app-settings:get", key) as {
 			success?: boolean;

@@ -54,7 +54,9 @@
 			"upToDateTitle": "У вас актуальная версия Recordly {{version}}.",
 			"availableTitle": "Доступна новая версия Recordly {{version}}.",
 			"availableGenericTitle": "Доступно обновление."
-		}
+		},
+		"microphoneLevelAria": "Microphone level",
+		"controlsAria": "Recording controls"
 	},
 	"sourceSelector": {
 		"loadingSources": "Загрузка источников...",
@@ -91,6 +93,35 @@
 		"notNow": "Не сейчас",
 		"updateNow": "Обновить сейчас",
 		"restartToUpdate": "Перезапустить для обновления",
-		"tryAgain": "Повторить"
+		"tryAgain": "Повторить",
+		"titleAria": "Recordly update"
+	},
+	"keyviz": {
+		"toggleOn": "Enable keyboard overlay",
+		"toggleOff": "Disable keyboard overlay",
+		"configMenu": "Recording configuration",
+		"configShortcuts": "Keyboard shortcuts",
+		"configKeyvizSettings": "Keyviz settings",
+		"errorTitle": "Keyboard overlay failed to start",
+		"errorMessage": "The keyboard overlay (Keyviz) could not start. Choose how to continue before recording.",
+		"errorRetry": "Try again",
+		"errorSkip": "Record without overlay",
+		"errorCancel": "Cancel recording",
+		"exitBanner": "Keyboard overlay stopped unexpectedly during recording.",
+		"exitContinue": "Continue without overlay",
+		"exitStopAndSave": "Stop and save",
+		"errorReasonStandaloneRunning": "Standalone Keyviz is already running. Close it before recording; Recordly will not stop it for you.",
+		"errorReasonDetectionFailed": "Could not check whether standalone Keyviz is running. Close Keyviz and try again.",
+		"errorReasonBinaryMissing": "The bundled Keyviz executable is missing. Reinstall Recordly or rebuild the Windows package.",
+		"errorReasonSpawnFailed": "Could not start the Keyviz process. Restart Recordly and try again.",
+		"errorReasonTimeout": "Keyviz took too long to start. Retry or record without the overlay.",
+		"errorReasonCaptureFailed": "Keyviz could not enable its input hook. Check the required permissions or record without the overlay.",
+		"errorReasonUnsupported": "Keyviz is supported on Windows only in this version.",
+		"errorReasonExited": "The Keyviz process exited before recording began.",
+		"errorReasonUnknown": "The keyboard overlay could not start. Retry or record without the overlay.",
+		"settingsMissing": "The bundled Keyviz executable is missing. Rebuild the Windows package.",
+		"settingsUnsupported": "Keyviz Settings is available on Windows only.",
+		"settingsDuringRecording": "Stop or pause recording before opening Keyviz Settings.",
+		"settingsFailed": "Could not open Keyviz Settings. Try again."
 	}
 }

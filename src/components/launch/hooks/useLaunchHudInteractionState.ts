@@ -1,32 +1,44 @@
-import { type MouseEvent, type RefObject, useCallback, useEffect, useRef } from "react";
+import {
+	type MouseEvent,
+	type RefObject,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+} from "react";
 
 export function useLaunchHudInteractionState({
 	openId,
+	hudDialogOpen,
 	isHudDraggingRef,
 	isWebcamPreviewDraggingRef,
 	webcamPreviewDragStartRef,
 }: {
 	openId: string | null;
+	hudDialogOpen: boolean;
 	isHudDraggingRef: RefObject<boolean>;
 	isWebcamPreviewDraggingRef: RefObject<boolean>;
 	webcamPreviewDragStartRef: RefObject<unknown>;
 }) {
 	const isMouseOverHudRef = useRef(false);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const interactiveOverlayOpen = openId !== null || hudDialogOpen;
 
-	useEffect(() => {
-		if (openId !== null) {
+	useLayoutEffect(() => {
+		if (interactiveOverlayOpen) {
+			isMouseOverHudRef.current = true;
 			if (timeoutRef.current) clearTimeout(timeoutRef.current);
 			window.electronAPI?.hudOverlaySetIgnoreMouse?.(false);
 		} else {
-			// Proactively check if we should ignore mouse when popover closes
-			setTimeout(() => {
+			isMouseOverHudRef.current = false;
+			const timer = setTimeout(() => {
 				if (!isMouseOverHudRef.current) {
 					window.electronAPI?.hudOverlaySetIgnoreMouse?.(true);
 				}
 			}, 150);
+			return () => clearTimeout(timer);
 		}
-	}, [openId]);
+	}, [interactiveOverlayOpen]);
 
 	useEffect(() => {
 		const handleMouseOver = (e: globalThis.MouseEvent) => {
@@ -38,12 +50,12 @@ export function useLaunchHudInteractionState({
 				isMouseOverHudRef.current = true;
 				if (timeoutRef.current) clearTimeout(timeoutRef.current);
 				window.electronAPI?.hudOverlaySetIgnoreMouse?.(false);
-			} else if (openId === null) {
+			} else if (!interactiveOverlayOpen) {
 				isMouseOverHudRef.current = false;
 				if (timeoutRef.current) clearTimeout(timeoutRef.current);
 				timeoutRef.current = setTimeout(() => {
 					if (
-						openId === null &&
+						!interactiveOverlayOpen &&
 						!isHudDraggingRef.current &&
 						!isWebcamPreviewDraggingRef.current &&
 						!webcamPreviewDragStartRef.current &&
@@ -57,7 +69,7 @@ export function useLaunchHudInteractionState({
 
 		window.addEventListener("mouseover", handleMouseOver);
 		return () => window.removeEventListener("mouseover", handleMouseOver);
-	}, [openId, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef]);
+	}, [interactiveOverlayOpen, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef]);
 
 	const beginInteractiveHudAction = useCallback(() => {
 		isMouseOverHudRef.current = true;
@@ -83,7 +95,7 @@ export function useLaunchHudInteractionState({
 
 			timeoutRef.current = setTimeout(() => {
 				if (
-					openId === null &&
+					!interactiveOverlayOpen &&
 					!isHudDraggingRef.current &&
 					!isWebcamPreviewDraggingRef.current &&
 					!webcamPreviewDragStartRef.current &&
@@ -93,7 +105,7 @@ export function useLaunchHudInteractionState({
 				}
 			}, 0);
 		},
-		[openId, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef],
+		[interactiveOverlayOpen, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef],
 	);
 
 	return {

@@ -19,31 +19,86 @@ export interface ShortcutBinding {
 
 export type ShortcutsConfig = Record<ShortcutAction, ShortcutBinding>;
 
+const SUPPORTED_GLOBAL_SHORTCUT_KEYS = new Set([
+	" ",
+	"space",
+	"enter",
+	"return",
+	"tab",
+	"escape",
+	"esc",
+	"backspace",
+	"delete",
+	"del",
+	"home",
+	"end",
+	"pageup",
+	"pagedown",
+	"arrowup",
+	"arrowdown",
+	"arrowleft",
+	"arrowright",
+	"up",
+	"down",
+	"left",
+	"right",
+	"plus",
+	"minus",
+]);
+
+export function isSupportedGlobalShortcutKey(key: string): boolean {
+	const normalized = key.toLowerCase();
+	return (
+		SUPPORTED_GLOBAL_SHORTCUT_KEYS.has(normalized) ||
+		/^[a-z0-9]$/.test(normalized) ||
+		/^f([1-9]|1\d|2[0-4])$/.test(normalized)
+	);
+}
+
+export interface RecordingShortcutsConfig {
+	start: ShortcutBinding;
+	stop: ShortcutBinding;
+	"pause-resume": ShortcutBinding;
+}
+
+export const RECORDING_SHORTCUT_ACTIONS = ["start", "stop", "pause-resume"] as const;
+export type RecordingShortcutAction = (typeof RECORDING_SHORTCUT_ACTIONS)[number];
+
+/** Global recording hotkeys shared by the renderer and Electron main process. */
+export const DEFAULT_RECORDING_SHORTCUTS: RecordingShortcutsConfig = {
+	start: { key: "r", ctrl: true, alt: true, shift: true },
+	stop: { key: "s", ctrl: true, alt: true, shift: true },
+	"pause-resume": { key: "p", ctrl: true, alt: true, shift: true },
+};
+
 export interface FixedShortcut {
+	/** i18n key in the `shortcuts` namespace — translate with t() at render time. */
 	label: string;
 	display: string;
 	bindings: ShortcutBinding[];
 }
 
 export const FIXED_SHORTCUTS: FixedShortcut[] = [
-	{ label: "Cycle Annotations Forward", display: "Tab", bindings: [{ key: "tab" }] },
+	{ label: "shortcuts.actions.cycleForward", display: "Tab", bindings: [{ key: "tab" }] },
 	{
-		label: "Cycle Annotations Backward",
+		label: "shortcuts.actions.cycleBackward",
 		display: "Shift + Tab",
 		bindings: [{ key: "tab", shift: true }],
 	},
 	{
-		label: "Delete Selected (alt)",
+		label: "shortcuts.actions.deleteSelectedAlt",
 		display: "Del / ⌫",
 		bindings: [{ key: "delete" }, { key: "backspace" }],
 	},
-	{ label: "Pan Timeline", display: "Shift + Scroll", bindings: [] },
-	{ label: "Zoom Timeline", display: "Ctrl + Scroll", bindings: [] },
+	{ label: "shortcuts.actions.panTimeline", display: "Shift + Scroll", bindings: [] },
+	{ label: "shortcuts.actions.zoomTimeline", display: "Ctrl + Scroll", bindings: [] },
 ];
 
 export type ShortcutConflict =
 	| { type: "configurable"; action: ShortcutAction }
 	| { type: "fixed"; label: string };
+
+// `label` on a fixed conflict is an i18n key in the `shortcuts` namespace.
 
 export function bindingsEqual(a: ShortcutBinding, b: ShortcutBinding): boolean {
 	return (
@@ -52,6 +107,11 @@ export function bindingsEqual(a: ShortcutBinding, b: ShortcutBinding): boolean {
 		!!a.shift === !!b.shift &&
 		!!a.alt === !!b.alt
 	);
+}
+
+/** Prevent global recording shortcuts from hijacking ordinary typing. */
+export function hasGlobalRecordingModifier(binding: ShortcutBinding): boolean {
+	return !!binding.ctrl || !!binding.alt;
 }
 
 export function findConflict(
@@ -72,6 +132,37 @@ export function findConflict(
 	return null;
 }
 
+export type RecordingShortcutConflict =
+	| { type: "fixed"; label: string }
+	| { type: "editor"; action: ShortcutAction }
+	| { type: "recording"; action: RecordingShortcutAction };
+
+/** Check a global recording binding against every fixed, editor, and other recording binding. */
+export function findRecordingShortcutConflict(
+	binding: ShortcutBinding,
+	editor: ShortcutsConfig,
+	recording: RecordingShortcutsConfig,
+	exceptRecordingAction?: RecordingShortcutAction,
+): RecordingShortcutConflict | null {
+	const fixed = FIXED_SHORTCUTS.find((shortcut) =>
+		shortcut.bindings.some((candidate) => bindingsEqual(candidate, binding)),
+	);
+	if (fixed) return { type: "fixed", label: fixed.label };
+
+	const editorAction = SHORTCUT_ACTIONS.find((action) =>
+		bindingsEqual(editor[action], binding),
+	);
+	if (editorAction) return { type: "editor", action: editorAction };
+
+	const recordingAction = RECORDING_SHORTCUT_ACTIONS.find(
+		(action) =>
+			action !== exceptRecordingAction && bindingsEqual(recording[action], binding),
+	);
+	if (recordingAction) return { type: "recording", action: recordingAction };
+
+	return null;
+}
+
 export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
 	addZoom: { key: "z" },
 	splitClip: { key: "c" },
@@ -81,13 +172,14 @@ export const DEFAULT_SHORTCUTS: ShortcutsConfig = {
 	playPause: { key: " " },
 };
 
+/** i18n keys in the `shortcuts` namespace — translate with t() at render time. */
 export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
-	addZoom: "Add Zoom",
-	splitClip: "Split Clip",
-	addAnnotation: "Add Annotation",
-	addKeyframe: "Add Keyframe",
-	deleteSelected: "Delete Selected",
-	playPause: "Play / Pause",
+	addZoom: "shortcuts.actions.addZoom",
+	splitClip: "shortcuts.actions.splitClip",
+	addAnnotation: "shortcuts.actions.addAnnotation",
+	addKeyframe: "shortcuts.actions.addKeyframe",
+	deleteSelected: "shortcuts.actions.deleteSelected",
+	playPause: "shortcuts.actions.playPause",
 };
 
 export function matchesShortcut(

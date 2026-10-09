@@ -373,7 +373,15 @@ async function createAudioInputDeviceSnapshot(): Promise<
 	return audioInputs.length > 0 ? audioInputs : null;
 }
 
-export function useScreenRecorder(): UseScreenRecorderReturn {
+/** Điều khiển Keyviz sidecar tùy chọn được HUD truyền vào (Windows only). */
+export interface KeyvizSidecarRecorderControl {
+	prepareForRecording: () => Promise<{ mode: "off" | "ok" | "skipped" | "cancelled" }>;
+	release: () => Promise<void>;
+}
+
+export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScreenRecorderReturn {
+	const keyvizRef = useRef(keyviz);
+	keyvizRef.current = keyviz;
 	const [recording, setRecording] = useState(false);
 	const [paused, setPaused] = useState(false);
 	const [starting, setStarting] = useState(false);
@@ -404,6 +412,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const nativeWarmStartActive = useRef(false);
 	const pendingNativeCleanupPath = useRef<string | null>(null);
 	const recordingStartGeneration = useRef(0);
+	const cancelRecordingRef = useRef<() => void>(() => {});
 	const nativeStopRequestInFlight = useRef(false);
 	const startInFlight = useRef(false);
 	const hasPromptedForReselect = useRef(false);
@@ -1266,6 +1275,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const stopRecording = useRef(() => {
 		recordingStartGeneration.current += 1;
 		setPaused(false);
+		void keyviz?.release();
 		if (nativeScreenRecording.current && nativeWarmStartActive.current) {
 			setRecording(false);
 			void (async () => {
@@ -1585,6 +1595,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			(state) => {
 				void (async () => {
 					recordingStartGeneration.current += 1;
+					await keyvizRef.current?.release();
 					setRecording(false);
 					nativeScreenRecording.current = false;
 					nativeWindowsRecording.current = false;
@@ -1665,6 +1676,14 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		const startGeneration = recordingStartGeneration.current + 1;
 		recordingStartGeneration.current = startGeneration;
 		const startWasCancelled = () => recordingStartGeneration.current !== startGeneration;
+		let keyvizPrepared = false;
+		let recordingStartedSuccessfully = false;
+		const prepareKeyviz = async () => {
+			if (!keyviz) return { mode: "off" as const };
+			const outcome = await keyviz.prepareForRecording();
+			keyvizPrepared = outcome.mode === "ok";
+			return outcome;
+		};
 
 		let hudSourceSelectionActive = false;
 		const setHudSourceSelectionActive = (active: boolean) => {
@@ -1711,6 +1730,15 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			let nativeWindowsCaptureStartFailed = false;
 
 			if (useNativeCapture) {
+				if (!shouldWarmStartNativeCapture) {
+					const keyvizOutcome = await prepareKeyviz();
+					if (keyvizOutcome.mode === "cancelled" || startWasCancelled()) {
+						cleanupCapturedMedia();
+						await stopWebcamRecorder();
+						return;
+					}
+				}
+
 				const nativeResult = await window.electronAPI.startNativeScreenRecording(
 					selectedSource,
 					{
@@ -1730,6 +1758,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					return;
 				}
 				if (!nativeResult.success) {
+					if (keyvizPrepared) {
+						await keyviz?.release();
+						keyvizPrepared = false;
+					}
 					if (useNativeWindowsCapture) {
 						nativeWindowsCaptureStartFailed = true;
 						console.warn(
@@ -1792,6 +1824,14 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 							}
 						} finally {
 							setCountdownActive(false);
+						}
+
+						const keyvizOutcome = await prepareKeyviz();
+						if (keyvizOutcome.mode === "cancelled" || startWasCancelled()) {
+							await discardActiveNativeCapture();
+							cleanupCapturedMedia();
+							await stopWebcamRecorder();
+							return;
 						}
 
 						const resumeResult = await window.electronAPI.resumeNativeScreenRecording();
@@ -1892,6 +1932,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					}
 
 					setRecording(true);
+					recordingStartedSuccessfully = true;
 					try {
 						await window.electronAPI?.setRecordingState(true);
 					} catch (stateError) {
@@ -2240,7 +2281,19 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			};
 			recorder.onerror = () => {
 				setRecording(false);
+				void keyvizRef.current?.release();
 			};
+			if (startWasCancelled()) {
+				cleanupCapturedMedia();
+				await stopWebcamRecorder();
+				return;
+			}
+			const keyvizOutcome = await prepareKeyviz();
+			if (keyvizOutcome.mode === "cancelled" || startWasCancelled()) {
+				cleanupCapturedMedia();
+				await stopWebcamRecorder();
+				return;
+			}
 			const mainStartedAt = Date.now();
 			beginWebcamCapture();
 			resetRecordingClock(mainStartedAt);
@@ -2248,6 +2301,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				webcamStartTime.current === null ? 0 : webcamStartTime.current - mainStartedAt;
 			recorder.start(RECORDER_TIMESLICE_MS);
 			setRecording(true);
+			recordingStartedSuccessfully = true;
 			try {
 				await window.electronAPI?.setRecordingState(true);
 			} catch (stateError) {
@@ -2273,6 +2327,13 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				await stopWebcamRecorder();
 			}
 		} finally {
+			if (keyvizPrepared && !recordingStartedSuccessfully) {
+				try {
+					await keyviz?.release();
+				} catch {
+					/* Sidecar exits on stdin EOF if the explicit release fails. */
+				}
+			}
 			try {
 				await window.electronAPI.finishRecordingStartup();
 			} catch (error) {
@@ -2304,6 +2365,8 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				const boundaryMs = Date.now();
 				markRecordingPaused(boundaryMs);
 				setPaused(true);
+				// Pause = nhả input listener (spec: quit sidecar, resume spawn lại).
+				void keyviz?.release();
 				try {
 					await window.electronAPI.pauseCursorCapture(boundaryMs);
 				} catch (error) {
@@ -2321,6 +2384,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				const boundaryMs = Date.now();
 				markRecordingPaused(boundaryMs);
 				setPaused(true);
+				void keyviz?.release();
 				try {
 					await window.electronAPI.pauseCursorCapture(boundaryMs);
 				} catch (error) {
@@ -2334,8 +2398,17 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		if (!recording || !paused) return;
 		if (nativeScreenRecording.current) {
 			void (async () => {
+				const keyvizOutcome = keyviz
+					? await keyviz.prepareForRecording()
+					: { mode: "off" as const };
+				if (keyvizOutcome.mode === "cancelled") {
+					cancelRecordingRef.current();
+					return;
+				}
+
 				const result = await window.electronAPI.resumeNativeScreenRecording();
 				if (!result.success) {
+					await keyviz?.release();
 					console.error(
 						"Failed to resume native screen recording:",
 						result.error ?? result.message,
@@ -2359,11 +2432,19 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			return;
 		}
 		if (mediaRecorder.current?.state === "paused") {
-			mediaRecorder.current.resume();
-			if (webcamRecorder.current?.state === "paused") {
-				webcamRecorder.current.resume();
-			}
 			void (async () => {
+				const keyvizOutcome = keyviz
+					? await keyviz.prepareForRecording()
+					: { mode: "off" as const };
+				if (keyvizOutcome.mode === "cancelled") {
+					cancelRecordingRef.current();
+					return;
+				}
+				if (mediaRecorder.current?.state !== "paused") return;
+				mediaRecorder.current.resume();
+				if (webcamRecorder.current?.state === "paused") {
+					webcamRecorder.current.resume();
+				}
 				const boundaryMs = Date.now();
 				markRecordingResumed(boundaryMs);
 				setPaused(false);
@@ -2374,10 +2455,11 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 				}
 			})();
 		}
-	}, [markRecordingResumed, paused, recording, resumeMicFallbackRecorder]);
+	}, [keyviz, markRecordingResumed, paused, recording, resumeMicFallbackRecorder]);
 
 	const cancelRecording = useCallback(() => {
 		recordingStartGeneration.current += 1;
+		void keyviz?.release();
 		if (!recording) return;
 		setPaused(false);
 		markRecordingResumed(Date.now());
@@ -2416,10 +2498,12 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	}, [
 		cleanupCapturedMedia,
 		discardActiveNativeCapture,
+		keyviz,
 		markRecordingResumed,
 		recording,
 		stopMicFallbackRecorder,
 	]);
+	cancelRecordingRef.current = cancelRecording;
 
 	const toggleRecording = async () => {
 		if (starting || countdownActive || finalizing) {

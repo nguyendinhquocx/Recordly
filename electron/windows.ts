@@ -329,9 +329,8 @@ function setHudOverlayMousePassthrough(ignore: boolean) {
 	}
 
 	if (!isHudOverlayMousePassthroughSupported()) {
-		if (process.platform !== "linux") {
-			setHudOverlayFallbackExpanded(!ignore);
-		}
+		// Platforms without passthrough still need enough HUD area for modal dialogs.
+		setHudOverlayFallbackExpanded(!ignore);
 		hudOverlayWindow.setIgnoreMouseEvents(false);
 		return;
 	}

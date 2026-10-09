@@ -17,6 +17,8 @@
 	"scripts": {
 		"dev": "vite --config vite.config.ts",
 		"postinstall": "node scripts/postinstall.mjs",
+		"prebuild": "npm run build:keyviz-sidecar",
+		"prebuild:win": "npm run build:keyviz-sidecar",
 		"build": "npm run build:platform-native-helpers && tsc && vite build --config vite.config.ts && npm run normalize:electron-main-cjs && npm run smoke:electron-main-cjs && electron-builder",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
@@ -31,6 +33,7 @@
 		"build:nvidia-cuda-compositor": "node scripts/build-nvidia-cuda-compositor.mjs",
 		"build:windows-capture": "node scripts/build-windows-capture.mjs",
 		"build:cursor-monitor": "node scripts/build-cursor-monitor.mjs",
+		"build:keyviz-sidecar": "node scripts/build-keyviz-sidecar.mjs",
 		"build:mac": "npm run build:platform-native-helpers && tsc && vite build --config vite.config.ts && npm run normalize:electron-main-cjs && npm run smoke:electron-main-cjs && electron-builder --mac",
 		"build:win": "npm run build:platform-native-helpers && tsc && vite build --config vite.config.ts && npm run normalize:electron-main-cjs && npm run smoke:electron-main-cjs && electron-builder --win",
 		"build:linux": "npm run build:platform-native-helpers && tsc && vite build --config vite.config.ts && npm run normalize:electron-main-cjs && npm run smoke:electron-main-cjs && electron-builder --linux",

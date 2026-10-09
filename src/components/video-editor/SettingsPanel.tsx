@@ -616,6 +616,7 @@ const CAPTION_LANGUAGE_OPTIONS = [
 
 const APP_LANGUAGE_LABELS: Record<AppLocale, string> = {
 	en: "English",
+	vi: "Tiếng Việt",
 	es: "Español",
 	fr: "Français",
 	de: "Deutsch",

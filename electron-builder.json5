@@ -118,7 +118,25 @@
     ],
     "icon": "icons/icons/win/icon.ico",
     "executableName": "Recordly",
-    "artifactName": "${productName}-windows-${arch}.${ext}"
+    "artifactName": "${productName}-windows-${arch}.${ext}",
+    "extraResources": [
+      {
+        "from": "keyviz/src-tauri/target/release/sidecar/recordly-keyviz.exe",
+        "to": "keyviz/recordly-keyviz.exe"
+      },
+      {
+        "from": "keyviz/LICENSE",
+        "to": "keyviz/LICENSE"
+      },
+      {
+        "from": "keyviz/src-tauri/crates/rdev/LICENSE",
+        "to": "keyviz/rdev-LICENSE"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      }
+    ]
   },
   "nsis": {
     "oneClick": false,

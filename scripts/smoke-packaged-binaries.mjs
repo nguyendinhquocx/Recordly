@@ -262,6 +262,26 @@ function verifyNativeHelpers(unpackedRoot) {
 	}
 }
 
+function verifyKeyvizSidecar(unpackedRoot) {
+	if (process.platform !== "win32") {
+		return;
+	}
+
+	// extraResources: from keyviz/src-tauri/target/release/sidecar/recordly-keyviz.exe -> to keyviz/
+	const resourcesDir = path.dirname(unpackedRoot);
+	const sidecarPath = path.join(resourcesDir, "keyviz", "recordly-keyviz.exe");
+	assertFile(sidecarPath, "Keyviz sidecar executable");
+	assertFile(path.join(resourcesDir, "keyviz", "LICENSE"), "Keyviz GPLv3 license");
+	assertFile(path.join(resourcesDir, "keyviz", "rdev-LICENSE"), "rdev MIT license");
+	assertFile(path.join(resourcesDir, "THIRD_PARTY_NOTICES.md"), "third-party notices");
+
+	const sizeBytes = statSync(sidecarPath).size;
+	if (sizeBytes < 1024 * 1024) {
+		fail(`Keyviz sidecar looks truncated (${sizeBytes} bytes) at ${relativePath(sidecarPath)}`);
+	}
+	console.log(`[packaged-smoke] Keyviz sidecar size: ${Math.round(sizeBytes / 1024 / 1024)} MB`);
+}
+
 const unpackedRoots = findDirectoriesByName(releaseRoot, "app.asar.unpacked");
 
 if (unpackedRoots.length === 0) {
@@ -277,6 +297,7 @@ for (const unpackedRoot of unpackedRoots) {
 	assertPackagedAppExecutable(unpackedRoot);
 	verifyFfmpeg(unpackedRoot);
 	verifyNativeHelpers(unpackedRoot);
+	verifyKeyvizSidecar(unpackedRoot);
 }
 
 console.log("[packaged-smoke] packaged binary path smoke passed");

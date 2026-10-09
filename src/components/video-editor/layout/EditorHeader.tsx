@@ -117,11 +117,11 @@ export function EditorHeader(props: Props) {
 					size="sm"
 					onClick={handleOpenProjectBrowser}
 					className="h-9 shrink-0 gap-2 px-3"
-					title="Home"
-					aria-label="Home"
+					title={t("launch.recording.home", "Home")}
+					aria-label={t("launch.recording.home", "Home")}
 				>
 					<House weight="fill" className="h-4 w-4" />
-					<span>Home</span>
+					<span>{t("launch.recording.home", "Home")}</span>
 				</Button>
 				<span
 					aria-hidden="true"

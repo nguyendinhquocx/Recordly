@@ -57,6 +57,17 @@
 		"instructions": "点击快捷键后按下新的组合键。按 Esc 取消。",
 		"resetToDefaults": "重置为默认",
 		"cancel": "取消",
-		"save": "保存"
+		"save": "保存",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}",
+		"recordingGroup": "Recording hotkeys (global)",
+		"recordingStart": "Start recording",
+		"recordingStop": "Stop recording",
+		"recordingPauseResume": "Pause / resume recording",
+		"globalActive": "Active system-wide",
+		"globalUnavailable": "Could not register - another app may be holding this combination",
+		"conflictsWithRecording": "Already used by recording hotkey: {{action}}",
+		"saveFailed": "Could not save shortcuts. Check that Recordly can write its settings, then try again.",
+		"globalModifierRequired": "Recording shortcuts need Ctrl/Command or Alt so they do not steal ordinary typing.",
+		"globalInvalid": "This key is not supported for a global recording shortcut."
 	}
 }

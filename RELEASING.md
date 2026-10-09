@@ -95,6 +95,26 @@ That is the normal path if you want “click new release and let CI do the rest.
 
 If you need to rerun publishing for an existing tag, use the manual dispatch for `.github/workflows/release.yml` and provide the existing tag.
 
+### Windows: Keyviz overlay sidecar
+
+The Windows package bundles the [Keyviz](https://github.com/mulaRahul/keyviz) keyboard overlay as a sidecar, and includes its GPLv3 license at `resources/keyviz/LICENSE`, the vendored `rdev` MIT license at `resources/keyviz/rdev-LICENSE`, plus `resources/THIRD_PARTY_NOTICES.md`. Build it before `build:win`:
+
+```bash
+npm run build:keyviz-sidecar
+```
+
+This installs Keyviz frontend deps with pnpm (`pnpm install --frozen-lockfile` inside `keyviz/`), builds the Tauri/Rust app in sidecar mode (`--config src-tauri/tauri.sidecar.conf.json`, with an identity distinct from standalone Keyviz), and stages `recordly-keyviz.exe`. `electron-builder` picks it up from `keyviz/src-tauri/target/release/sidecar/` via `extraResources`; `npm run smoke:packaged-binaries` verifies it is present in packaged output. Requires the Rust toolchain and pnpm on top of the Windows prerequisites above. The sidecar speaks a line-delimited JSON protocol over stdio (no TCP), only installs its input hook after Recordly explicitly requests capture, and exits when its stdin closes. If standalone Keyviz is already running, Recordly reports the conflict and does not start a second overlay or kill the standalone process.
+
+A clean local Windows package build runs `npm run build:win`; its `prebuild:win` hook builds the sidecar first. The GitHub `build.yml` and `release.yml` Windows jobs set up pnpm and Rust and run the same sidecar build before `electron-builder`. To verify the integration from the repository root:
+
+```bash
+npm run typecheck
+npm run i18n:check
+npm test -- electron/ipc/keyvizSidecar.test.ts electron/ipc/globalShortcuts.test.ts
+npm run build:win
+npm run smoke:packaged-binaries
+```
+
 ## Notes
 
 - macOS auto-updates require the `zip` target in addition to `dmg`, because `latest-mac.yml` is generated from the zipped build.

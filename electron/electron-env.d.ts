@@ -994,6 +994,74 @@ interface Window {
 		}>;
 		getShortcuts: () => Promise<Record<string, unknown> | null>;
 		saveShortcuts: (shortcuts: unknown) => Promise<{ success: boolean; error?: string }>;
+		onShortcutsChanged: (callback: (shortcuts: Record<string, unknown>) => void) => () => void;
+		/** Keyviz sidecar: trạng thái process/listener (Windows only). */
+		keyvizGetStatus: () => Promise<{
+			supported: boolean;
+			state:
+				| "idle"
+				| "starting"
+				| "ready"
+				| "capturing"
+				| "stopping"
+				| "failed"
+				| "exited";
+			binaryFound: boolean;
+		}>;
+		/** Keyviz sidecar: chuẩn bị overlay + bật input listener trước khi capture. */
+		keyvizPrepareCapture: (
+			suppressedShortcuts: Array<{
+				key: string;
+				ctrl?: boolean;
+				shift?: boolean;
+				alt?: boolean;
+			}>,
+		) => Promise<{ ok: true } | { ok: false; code: string; message: string }>;
+		/** Keyviz sidecar: dừng process (pause/stop/cancel). */
+		keyvizRelease: () => Promise<{ success: boolean }>;
+		/** Keyviz sidecar: mở cửa sổ Settings native (không listener). */
+		keyvizOpenSettings: () => Promise<{ success: boolean; error?: string }>;
+		onKeyvizStateChanged: (
+			callback: (status: {
+				supported: boolean;
+				state:
+					| "idle"
+					| "starting"
+					| "ready"
+					| "capturing"
+					| "stopping"
+					| "failed"
+					| "exited";
+				binaryFound: boolean;
+			}) => void,
+		) => () => void;
+		onKeyvizUnexpectedExit: (callback: () => void) => () => void;
+		getGlobalShortcutsSnapshot: () => Promise<{
+			editor: Record<string, unknown>;
+			recording: Record<string, unknown>;
+		}>;
+		registerGlobalRecordingHotkeys: () => Promise<
+			Array<{
+				action: string;
+				binding: unknown;
+				accelerator: string | null;
+				registered: boolean;
+				code?: string;
+			}>
+		>;
+		suspendGlobalRecordingHotkeys: () => boolean;
+		resumeGlobalRecordingHotkeys: () => Promise<
+			Array<{
+				action: string;
+				binding: unknown;
+				accelerator: string | null;
+				registered: boolean;
+				code?: string;
+			}>
+		>;
+		onRecordingHotkey: (
+			callback: (action: "start" | "stop" | "pause-resume") => void,
+		) => () => void;
 		getAppSetting: (key: string) => unknown;
 		setAppSetting: (key: string, value: unknown) => boolean;
 		setHasUnsavedChanges: (hasChanges: boolean) => void;

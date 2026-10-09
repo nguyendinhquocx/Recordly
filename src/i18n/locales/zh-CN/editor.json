@@ -43,7 +43,22 @@
 		"preparingFootage": "正在为时间轴准备视频和音频。"
 	},
 	"library": {
-		"videos": "视频"
+		"videos": "视频",
+		"panelAria": "Clips library",
+		"actionsMenu": "Clip library actions",
+		"moveAllToTrash": "Move all to Trash",
+		"closeClips": "Close Clips",
+		"selectAll": "Select all videos",
+		"selectedCount": "{{count}} selected",
+		"recordingCount": "{{count}} recording",
+		"recordingsCount": "{{count}} recordings",
+		"searchVideos": "Search videos",
+		"moveToTrash": "Move selected to Trash",
+		"addToTimeline": "Add to timeline",
+		"addToTimelineAria": "Add {{name}} to timeline",
+		"movedToTrash": "Moved to Trash",
+		"dragHint": "Drag to the timeline or click + to add.",
+		"undoTitle": "Undo (⌘Z / Ctrl+Z)"
 	},
 	"playback": {
 		"play": "播放",
@@ -91,7 +106,6 @@
 		"solidColor": "纯色 (审查)",
 		"borderRadius": "边框半径"
 	},
-
 	"fontStyles": {
 		"classic": "经典",
 		"editor": "编辑器",
@@ -140,7 +154,20 @@
 		"emailLabel": "邮箱",
 		"xLabel": "X",
 		"reportIssue": "报告问题 / 提交反馈",
-		"openFailed": "打开链接失败。"
+		"openFailed": "打开链接失败。",
+		"sendTitle": "Send feedback",
+		"sentTitle": "Thanks for your feedback",
+		"signInToSubmit": "Sign in to send feedback.",
+		"openHomeToSignIn": "Open Home to sign in.",
+		"needSubjectAndDescription": "Add a subject and description.",
+		"subjectLabel": "Subject",
+		"subjectPlaceholder": "What’s on your mind?",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Tell us more…",
+		"attachFiles": "Attach files",
+		"removeFileAria": "Remove {{name}}",
+		"diagnosticsNote": "Diagnostics will be sent along with your feedback.",
+		"sending": "Sending…"
 	},
 	"keyboardShortcuts": {
 		"trigger": "快捷键",
@@ -169,7 +196,10 @@
 		"experimentalBuilds": "提示：可在设置中开启实验版本访问权限",
 		"cursorAppearance": "提示：你可以自定义光标外观"
 	},
-	"account": { "title": "账户", "comingSoon": "账户功能即将推出" },
+	"account": {
+		"title": "账户",
+		"comingSoon": "账户功能即将推出"
+	},
 	"nativeCaptureUnavailable": {
 		"title": "没有出错，但我们无法渲染动画光标叠加层。",
 		"description": "你的设备不支持原生捕获。这可能是由我们尚未确定的多种原因造成的。Recordly 仍可继续运行，但无法进行光标平滑处理。",

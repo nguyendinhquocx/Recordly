@@ -28,6 +28,13 @@ import {
 	killWindowsCaptureProcess,
 	registerIpcHandlers,
 } from "./ipc/handlers";
+import {
+	handleRendererProcessGone,
+	registerGlobalRecordingShortcuts,
+	registerGlobalShortcutIpcHandlers,
+	unregisterAllGlobalRecordingShortcuts,
+} from "./ipc/globalShortcuts";
+import { getKeyvizSidecarController } from "./ipc/keyvizSidecar";
 import { ensureMediaServer } from "./mediaServer";
 import { hardenWebContentsNavigation, shouldHardenWebContentsType } from "./navigationPolicy";
 import { shouldGrantDisplayCapture, shouldGrantMediaPermission } from "./permissionPolicy";
@@ -87,6 +94,18 @@ app.on("web-contents-created", (_event, contents) => {
 	}
 
 	hardenWebContentsNavigation(contents, (url) => shell.openExternal(url));
+});
+
+// Renderer chết giữa lúc capture chord sẽ không bao giờ gửi resume tương ứng;
+// nhả suspension của nó để global hotkeys không chết im lặng đến khi restart app.
+app.on("web-contents-created", (_event, contents) => {
+	const releaseSuspension = () => {
+		handleRendererProcessGone(contents.id).catch((error) => {
+			console.error("Failed to resume global shortcuts after renderer exit:", error);
+		});
+	};
+	contents.on("render-process-gone", releaseSuspension);
+	contents.on("destroyed", releaseSuspension);
 });
 
 function configureGpuAccelerationSwitches() {
@@ -883,6 +902,9 @@ app.on("before-quit", () => {
 	showCursor();
 	cleanupNativeVideoExportSessions();
 	void cleanupAllExportStreams();
+	// Keyviz sidecar: stdin pipe đóng khi Electron chết là đủ; dispose chủ động cho chắc.
+	void getKeyvizSidecarController().dispose();
+	unregisterAllGlobalRecordingShortcuts();
 });
 
 app.on("window-all-closed", () => {
@@ -1023,6 +1045,8 @@ app.whenReady().then(async () => {
 		}),
 	]);
 
+	registerGlobalShortcutIpcHandlers();
+	void registerGlobalRecordingShortcuts();
 	registerIpcHandlers(
 		createEditorWindowWrapper,
 		createSourceSelectorWindowWrapper,

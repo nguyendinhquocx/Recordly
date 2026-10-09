@@ -11,6 +11,7 @@
 		"cycleBackward": "Cycle Annotations Backward",
 		"deleteSelectedAlt": "Delete Selected (alt)",
 		"panTimeline": "Pan Timeline",
-		"zoomTimeline": "Zoom Timeline"
+		"zoomTimeline": "Zoom Timeline",
+		"splitClip": "Split Clip"
 	}
 }

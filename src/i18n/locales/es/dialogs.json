@@ -57,6 +57,17 @@
 		"instructions": "Haz clic en un atajo y luego presiona la nueva combinación de teclas. Presiona Esc para cancelar.",
 		"resetToDefaults": "Restablecer valores predeterminados",
 		"cancel": "Cancelar",
-		"save": "Guardar"
+		"save": "Guardar",
+		"changeShortcut": "Change {{action}} shortcut, currently {{binding}}",
+		"recordingGroup": "Recording hotkeys (global)",
+		"recordingStart": "Start recording",
+		"recordingStop": "Stop recording",
+		"recordingPauseResume": "Pause / resume recording",
+		"globalActive": "Active system-wide",
+		"globalUnavailable": "Could not register - another app may be holding this combination",
+		"conflictsWithRecording": "Already used by recording hotkey: {{action}}",
+		"saveFailed": "Could not save shortcuts. Check that Recordly can write its settings, then try again.",
+		"globalModifierRequired": "Recording shortcuts need Ctrl/Command or Alt so they do not steal ordinary typing.",
+		"globalInvalid": "This key is not supported for a global recording shortcut."
 	}
 }
