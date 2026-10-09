@@ -24,7 +24,7 @@ Recordly is an open-source screen recorder and editor for walkthroughs, demos, a
 > The keyboard overlay and recording hotkeys are **Windows-only** in this fork. Everything else works cross-platform as upstream.
 
 > [!TIP]
-> **Windows installer:** grab the latest build from the fork's [Releases](https://github.com/nguyendinhquocx/Recordly/releases). Upstream [releases](https://github.com/webadderallorg/Recordly/releases) exist but do not include the fork features; macOS/Linux builds are source-only for now.
+> **Windows installer:** grab the latest build from the fork's [Releases](https://github.com/nguyendinhquocx/Recordly-Keyviz-X/releases). Upstream [releases](https://github.com/webadderallorg/Recordly/releases) exist but do not include the fork features; macOS/Linux builds are source-only for now.
 
 ---
 
@@ -52,7 +52,7 @@ Prerequisites:
 - [Rust](https://rustup.rs/) and pnpm `10.18.2` (the version pinned by `keyviz/package.json`) — only needed for the Keyviz sidecar
 
 ```bash
-git clone https://github.com/nguyendinhquocx/Recordly.git recordly
+git clone https://github.com/nguyendinhquocx/Recordly-Keyviz-X.git recordly
 cd recordly
 npm install
 npm run build:win        # builds the Keyviz sidecar automatically, then the Windows package
@@ -119,4 +119,4 @@ Project docs: [`RELEASING.md`](./RELEASING.md) (release/build notes) · [`TRANSL
 - [**@webadderall**](https://x.com/webadderall) — creator of Recordly and its upstream maintainer. This fork would not exist without their work.
 - Recordly started as a fork of [OpenScreen](https://github.com/siddharthvaddem/openscreen); much of the zoom machinery traces back there.
 - [Keyviz](https://keyviz.org) by [mulaRahul](https://github.com/mulaRahul) — the keyboard/mouse overlay engine, integrated as a sidecar in this fork.
-- Fork additions (overlay integration, hotkeys, Vietnamese localization) maintained by [@nguyendinhquocx](https://github.com/nguyendinhquocx). Bug reports and PRs go to [this fork's issues](https://github.com/nguyendinhquocx/Recordly/issues); upstream concerns go to [upstream issues](https://github.com/webadderallorg/Recordly/issues).
+- Fork additions (overlay integration, hotkeys, Vietnamese localization) maintained by [@nguyendinhquocx](https://github.com/nguyendinhquocx). Bug reports and PRs go to [this fork's issues](https://github.com/nguyendinhquocx/Recordly-Keyviz-X/issues); upstream concerns go to [upstream issues](https://github.com/webadderallorg/Recordly/issues).
