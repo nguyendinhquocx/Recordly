@@ -238,6 +238,9 @@ pub use crate::codes_conv::*;
 pub use keycodes::android::{
     code_from_key as android_keycode_from_key, key_from_code as android_key_from_code,
 };
+pub use keycodes::chrome::{
+    code_from_key as chrome_keycode_from_key, key_from_code as chrome_key_from_code,
+};
 pub use keycodes::linux::{
     code_from_key as linux_keycode_from_key, key_from_code as linux_key_from_code,
 };
@@ -251,9 +254,6 @@ pub use keycodes::windows::{
     code_from_key as win_code_from_key, code_from_key as win_keycode_from_key, get_win_codes,
     get_win_key, key_from_code as win_key_from_keycode, key_from_scancode as win_key_from_scancode,
     scancode_from_key as win_scancode_from_key,
-};
-pub use keycodes::chrome::{
-    code_from_key as chrome_keycode_from_key, key_from_code as chrome_key_from_code,
 };
 
 #[cfg(target_os = "macos")]
@@ -276,9 +276,10 @@ pub use crate::linux::{simulate_char, simulate_unicode, Keyboard};
 pub use crate::keycodes::windows::key_from_scancode;
 #[cfg(target_os = "windows")]
 pub use crate::windows::{
-    display_size as _display_size, get_modifier, listen as _listen, set_modifier,
-    simulate as _simulate, simulate_char, simulate_code, simulate_key_unicode, simulate_unicode,
-    simulate_unistr, vk_to_scancode, Keyboard,
+    display_size as _display_size, get_modifier, listen as _listen,
+    listen_with_ready as _listen_with_ready, set_modifier, simulate as _simulate, simulate_char,
+    simulate_code, simulate_key_unicode, simulate_unicode, simulate_unistr, vk_to_scancode,
+    Keyboard,
 };
 
 pub use crate::rdev::UnicodeInfo;
@@ -309,6 +310,30 @@ pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
     T: FnMut(Event) + 'static,
 {
+    _listen(callback)
+}
+
+/// Run a callback after the platform listener is installed and before its blocking event loop.
+/// Non-Windows backends currently invoke it immediately before entering their listener loop.
+#[cfg(target_os = "windows")]
+pub fn listen_with_ready<T, R>(callback: T, on_ready: R) -> Result<(), ListenError>
+where
+    T: FnMut(Event) + 'static,
+    R: FnOnce(),
+{
+    _listen_with_ready(callback, on_ready)
+}
+
+#[cfg(all(
+    not(target_os = "windows"),
+    not(any(target_os = "android", target_os = "ios"))
+))]
+pub fn listen_with_ready<T, R>(callback: T, on_ready: R) -> Result<(), ListenError>
+where
+    T: FnMut(Event) + 'static,
+    R: FnOnce(),
+{
+    on_ready();
     _listen(callback)
 }
 

@@ -1058,6 +1058,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	saveShortcuts: (shortcuts: unknown) => {
 		return ipcRenderer.invoke("save-shortcuts", shortcuts);
 	},
+	onShortcutsChanged: (callback: (shortcuts: Record<string, unknown>) => void) => {
+		const listener = (
+			_event: Electron.IpcRendererEvent,
+			shortcuts: Record<string, unknown>,
+		) => callback(shortcuts);
+		ipcRenderer.on("shortcuts:changed", listener);
+		return () => ipcRenderer.removeListener("shortcuts:changed", listener);
+	},
 	keyvizGetStatus: () => {
 		return ipcRenderer.invoke("keyviz:get-status");
 	},

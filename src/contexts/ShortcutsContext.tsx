@@ -5,32 +5,24 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import {
+	DEFAULT_RECORDING_SHORTCUTS,
 	DEFAULT_SHORTCUTS,
 	mergeWithDefaults,
-	type ShortcutBinding,
+	RECORDING_SHORTCUT_ACTIONS,
+	type RecordingShortcutsConfig,
 	type ShortcutsConfig,
 } from "@/lib/shortcuts";
+export {
+	DEFAULT_RECORDING_SHORTCUTS,
+	RECORDING_SHORTCUT_ACTIONS,
+	type RecordingShortcutAction,
+	type RecordingShortcutsConfig,
+} from "@/lib/shortcuts";
 import { isMac as getIsMac } from "@/utils/platformUtils";
-
-/** 3 global recording hotkeys (start/stop/pause-resume) — schema mới của shortcuts.json. */
-export interface RecordingShortcutsConfig {
-	start: ShortcutBinding;
-	stop: ShortcutBinding;
-	"pause-resume": ShortcutBinding;
-}
-
-export const RECORDING_SHORTCUT_ACTIONS = ["start", "stop", "pause-resume"] as const;
-export type RecordingShortcutAction = (typeof RECORDING_SHORTCUT_ACTIONS)[number];
-
-/** Hotkey mặc định theo spec: Ctrl+Alt+Shift+R / S / P (Windows). */
-export const DEFAULT_RECORDING_SHORTCUTS: RecordingShortcutsConfig = {
-	start: { key: "r", ctrl: true, alt: true, shift: true },
-	stop: { key: "s", ctrl: true, alt: true, shift: true },
-	"pause-resume": { key: "p", ctrl: true, alt: true, shift: true },
-};
 
 interface ShortcutsContextValue {
 	shortcuts: ShortcutsConfig;
@@ -38,8 +30,10 @@ interface ShortcutsContextValue {
 	isMac: boolean;
 	setShortcuts: (config: ShortcutsConfig) => void;
 	setRecordingShortcuts: (config: RecordingShortcutsConfig) => void;
-	persistShortcuts: (config?: ShortcutsConfig) => Promise<void>;
-	persistRecordingShortcuts: (config?: RecordingShortcutsConfig) => Promise<void>;
+	persistShortcuts: (
+		config?: ShortcutsConfig,
+		recordingConfig?: RecordingShortcutsConfig,
+	) => Promise<void>;
 	isConfigOpen: boolean;
 	openConfig: () => void;
 	closeConfig: () => void;
@@ -67,6 +61,26 @@ function mergeRecordingWithDefaults(
 	return merged;
 }
 
+function applySavedShortcuts(
+	saved: Record<string, unknown>,
+	setEditor: (config: ShortcutsConfig) => void,
+	setRecording: (config: RecordingShortcutsConfig) => void,
+): void {
+	const looksLikeNewSchema = "editor" in saved || "recording" in saved;
+	if (!looksLikeNewSchema) {
+		setEditor(mergeWithDefaults(saved as Partial<ShortcutsConfig>));
+		setRecording({ ...DEFAULT_RECORDING_SHORTCUTS });
+		return;
+	}
+
+	const editor = saved.editor as Partial<ShortcutsConfig> | undefined;
+	const recording = saved.recording as Partial<RecordingShortcutsConfig> | undefined;
+	if (editor) {
+		setEditor(mergeWithDefaults(editor));
+	}
+	setRecording(mergeRecordingWithDefaults(recording));
+}
+
 export function ShortcutsProvider({ children }: { children: ReactNode }) {
 	const [shortcuts, setShortcuts] = useState<ShortcutsConfig>(DEFAULT_SHORTCUTS);
 	const [recordingShortcuts, setRecordingShortcutsState] = useState<RecordingShortcutsConfig>(
@@ -74,6 +88,7 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
 	);
 	const [isMac, setIsMac] = useState(false);
 	const [isConfigOpen, setIsConfigOpen] = useState(false);
+	const receivedExternalSave = useRef(false);
 
 	useEffect(() => {
 		getIsMac()
@@ -83,52 +98,35 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
 		void (async () => {
 			try {
 				const saved = await window.electronAPI?.getShortcuts?.();
-				if (!saved) return;
-				// Schema mới: { editor, recording }. Schema cũ (flat) coi như editor-only.
-				const looksLikeNewSchema = "editor" in saved || "recording" in saved;
-				if (looksLikeNewSchema) {
-					const editor = (saved as { editor?: Partial<ShortcutsConfig> }).editor;
-					const recording = (
-						saved as { recording?: Partial<RecordingShortcutsConfig> }
-					).recording;
-					if (editor) {
-						setShortcuts(mergeWithDefaults(editor));
-					}
-					setRecordingShortcutsState(mergeRecordingWithDefaults(recording));
-				} else {
-					setShortcuts(mergeWithDefaults(saved as Partial<ShortcutsConfig>));
-				}
+				if (!saved || receivedExternalSave.current) return;
+				applySavedShortcuts(saved, setShortcuts, setRecordingShortcutsState);
 			} catch {
 				return undefined;
 			}
 		})();
 	}, []);
 
-	const persistShortcuts = useCallback(
-		async (config?: ShortcutsConfig) => {
-			const nextEditor = config ?? shortcuts;
-			// Gửi full schema mới; giữ nguyên recording hiện tại.
-			await window.electronAPI?.saveShortcuts?.({
-				editor: nextEditor,
-				recording: recordingShortcuts,
-			});
-			if (config) {
-				setShortcuts(config);
-			}
-		},
-		[shortcuts, recordingShortcuts],
-	);
+	useEffect(() => {
+		const unsubscribe = window.electronAPI?.onShortcutsChanged?.((saved) => {
+			receivedExternalSave.current = true;
+			applySavedShortcuts(saved, setShortcuts, setRecordingShortcutsState);
+		});
+		return () => unsubscribe?.();
+	}, []);
 
-	const persistRecordingShortcuts = useCallback(
-		async (config?: RecordingShortcutsConfig) => {
-			const nextRecording = config ?? recordingShortcuts;
-			await window.electronAPI?.saveShortcuts?.({
-				editor: shortcuts,
+	const persistShortcuts = useCallback(
+		async (config?: ShortcutsConfig, recordingConfig?: RecordingShortcutsConfig) => {
+			const nextEditor = config ?? shortcuts;
+			const nextRecording = recordingConfig ?? recordingShortcuts;
+			const result = await window.electronAPI?.saveShortcuts?.({
+				editor: nextEditor,
 				recording: nextRecording,
 			});
-			if (config) {
-				setRecordingShortcutsState(config);
+			if (result && !result.success) {
+				throw new Error(result.error ?? "Failed to save shortcuts");
 			}
+			setShortcuts(nextEditor);
+			setRecordingShortcutsState(nextRecording);
 		},
 		[shortcuts, recordingShortcuts],
 	);
@@ -148,7 +146,6 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
 			setShortcuts,
 			setRecordingShortcuts,
 			persistShortcuts,
-			persistRecordingShortcuts,
 			isConfigOpen,
 			openConfig,
 			closeConfig,
@@ -159,7 +156,6 @@ export function ShortcutsProvider({ children }: { children: ReactNode }) {
 			isMac,
 			setRecordingShortcuts,
 			persistShortcuts,
-			persistRecordingShortcuts,
 			isConfigOpen,
 			openConfig,
 			closeConfig,

@@ -82,7 +82,7 @@ fn setup_standalone(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Erro
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
     // start global input listener
-    start_listener(app_handle.clone(), Some(toggle_item.clone()));
+    start_listener(app_handle.clone(), Some(toggle_item.clone()), None);
 
     // setup tray menu
     let menu = Menu::with_items(app, &[&toggle_item, &settings_item, &quit_item])?;

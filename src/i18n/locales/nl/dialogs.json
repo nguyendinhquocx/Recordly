@@ -65,6 +65,7 @@
 		"recordingPauseResume": "Pause / resume recording",
 		"globalActive": "Active system-wide",
 		"globalUnavailable": "Could not register - another app may be holding this combination",
-		"conflictsWithRecording": "Already used by recording hotkey: {{action}}"
+		"conflictsWithRecording": "Already used by recording hotkey: {{action}}",
+		"saveFailed": "Could not save shortcuts. Check that Recordly can write its settings, then try again."
 	}
 }

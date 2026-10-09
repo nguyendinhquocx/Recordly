@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	bindingToSidecarChord,
-	KeyvizSidecarController,
+	KeyvizSidecarController as BaseKeyvizSidecarController,
 	type SidecarChord,
 } from "./keyvizSidecar";
 
@@ -19,6 +19,7 @@ interface FakeChild extends EventEmitter {
 	stderr: EventEmitter & { setEncoding: ReturnType<typeof vi.fn> };
 	kill: ReturnType<typeof vi.fn>;
 	exitCode: number | null;
+	pid: number | undefined;
 }
 
 function createFakeChild() {
@@ -32,6 +33,7 @@ function createFakeChild() {
 	(child.stderr as unknown as { resume: ReturnType<typeof vi.fn> }).resume = vi.fn();
 	child.kill = vi.fn();
 	child.exitCode = null;
+	child.pid = 1234;
 	return child;
 }
 
@@ -43,6 +45,12 @@ function emittedLines(child: FakeChild): Array<Record<string, unknown>> {
 
 function resolveBinaryFound(): string | null {
 	return "C:\\mock\\recordly-keyviz.exe";
+}
+
+class KeyvizSidecarController extends BaseKeyvizSidecarController {
+	constructor(options: ConstructorParameters<typeof BaseKeyvizSidecarController>[0] = {}) {
+		super({ detectStandaloneKeyviz: () => false, ...options });
+	}
 }
 
 describe("bindingToSidecarChord", () => {
@@ -172,6 +180,93 @@ describe("KeyvizSidecarController", () => {
 		});
 		await vi.advanceTimersByTimeAsync(60_000);
 		await assertion;
+	});
+
+	it("resolves the ready waiter when the sidecar exits before ready", async () => {
+		const child = createFakeChild();
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => child as never,
+		});
+
+		const promise = controller.prepareCapture([]);
+		await vi.advanceTimersByTimeAsync(0);
+		child.emit("exit", 1);
+
+		await expect(promise).resolves.toMatchObject({ ok: false, code: "process_exited" });
+	});
+
+	it("resolves the capture_started waiter when the sidecar exits during handshake", async () => {
+		const child = createFakeChild();
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => child as never,
+		});
+
+		const promise = controller.prepareCapture([]);
+		await vi.advanceTimersByTimeAsync(0);
+		child.stdout.emit("data", '{"type":"ready"}\n');
+		await vi.advanceTimersByTimeAsync(0);
+		child.emit("exit", 1);
+
+		await expect(promise).resolves.toMatchObject({ ok: false, code: "process_exited" });
+	});
+
+	it("treats capture_failed buffered after capture_started as startup failure", async () => {
+		const child = createFakeChild();
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => child as never,
+		});
+
+		const promise = controller.prepareCapture([]);
+		await vi.advanceTimersByTimeAsync(0);
+		child.stdout.emit("data", '{"type":"ready"}\n');
+		await vi.advanceTimersByTimeAsync(0);
+		child.stdout.emit(
+			"data",
+			'{"type":"capture_started"}\n{"type":"capture_failed","code":"hook_install_failed","message":"late failure"}\n',
+		);
+		await vi.advanceTimersByTimeAsync(0);
+		child.emit("exit", 0);
+
+		await expect(promise).resolves.toEqual({
+			ok: false,
+			code: "capture_failed",
+			message: "late failure",
+		});
+	});
+
+	it("rejects capture when standalone Keyviz is already running", async () => {
+		const spawnFn = vi.fn();
+		const controller = new BaseKeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			detectStandaloneKeyviz: () => true,
+			spawnFn: spawnFn as never,
+		});
+
+		await expect(controller.prepareCapture([])).resolves.toMatchObject({
+			ok: false,
+			code: "standalone_running",
+		});
+		expect(spawnFn).not.toHaveBeenCalled();
+	});
+
+	it("reports asynchronous settings spawn failures", async () => {
+		const child = createFakeChild();
+		child.pid = undefined;
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => {
+				queueMicrotask(() => child.emit("error", new Error("permission denied")));
+				return child as never;
+			},
+		});
+
+		await expect(controller.openSettings()).resolves.toEqual({
+			success: false,
+			error: "spawn_failed",
+		});
 	});
 
 	it("stop() sends quit and waits for process exit", async () => {

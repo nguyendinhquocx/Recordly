@@ -64,6 +64,15 @@ pub fn listen<T>(callback: T) -> Result<(), ListenError>
 where
     T: FnMut(Event) + 'static,
 {
+    listen_with_ready(callback, || {})
+}
+
+/// Install the low-level hooks, notify the caller, then enter the blocking message loop.
+pub fn listen_with_ready<T, R>(callback: T, on_ready: R) -> Result<(), ListenError>
+where
+    T: FnMut(Event) + 'static,
+    R: FnOnce(),
+{
     unsafe {
         GLOBAL_CALLBACK = Some(Box::new(callback));
         set_key_hook(raw_callback_keyboard)?;
@@ -71,6 +80,8 @@ where
             set_mouse_hook(raw_callback_mouse)?;
         }
 
+        // ACK only after SetWindowsHookEx succeeds for every configured hook.
+        on_ready();
         GetMessageA(null_mut(), null_mut(), 0, 0);
     }
     Ok(())

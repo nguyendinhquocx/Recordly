@@ -24,6 +24,7 @@ import { useMicrophoneDevices } from "../../hooks/useMicrophoneDevices";
 import { useScreenRecorder } from "../../hooks/useScreenRecorder";
 import { useVideoDevices } from "../../hooks/useVideoDevices";
 import { Button } from "../ui/button";
+import { toast } from "../ui/toast";
 import { HudInteractionContext } from "./contexts/HudInteractionContext";
 import {
 	canToggleFloatingWebcamPreview,
@@ -48,12 +49,14 @@ import { MicPopover } from "./popovers/MicPopover";
 import { SourcePopover } from "./popovers/SourcePopover";
 import { WebcamPopover } from "./popovers/WebcamPopover";
 import { RecordingControls } from "./RecordingControls";
+import { ShortcutsConfigDialog } from "../video-editor/ShortcutsConfigDialog";
 
 export function LaunchWindow() {
 	return (
 		<LaunchPopoverCoordinatorProvider>
 			<ShortcutsProvider>
 				<LaunchWindowContent />
+				<ShortcutsConfigDialog />
 			</ShortcutsProvider>
 		</LaunchPopoverCoordinatorProvider>
 	);
@@ -400,26 +403,28 @@ function LaunchWindowContent() {
 				}
 			/>
 
-			<Button
-				variant="ghost"
-				size="icon"
-				iconSize="lg"
-				aria-pressed={keyviz.enabled === true}
-				aria-label={
-					keyviz.enabled
-						? t("keyviz.toggleOff", "Disable keyboard overlay")
-						: t("keyviz.toggleOn", "Enable keyboard overlay")
-				}
-				title={
-					keyviz.enabled
-						? t("keyviz.toggleOff", "Disable keyboard overlay")
-						: t("keyviz.toggleOn", "Enable keyboard overlay")
-				}
-				className={keyviz.enabled ? "text-accent" : ""}
-				onClick={() => keyviz.setEnabled(!keyviz.enabled)}
-			>
-				<Keyboard weight={keyviz.enabled ? "fill" : "regular"} className="size-5" />
-			</Button>
+			{keyviz.supported && (
+				<Button
+					variant="ghost"
+					size="icon"
+					iconSize="lg"
+					aria-pressed={keyviz.enabled === true}
+					aria-label={
+						keyviz.enabled
+							? t("keyviz.toggleOff", "Disable keyboard overlay")
+							: t("keyviz.toggleOn", "Enable keyboard overlay")
+					}
+					title={
+						keyviz.enabled
+							? t("keyviz.toggleOff", "Disable keyboard overlay")
+							: t("keyviz.toggleOn", "Enable keyboard overlay")
+					}
+					className={keyviz.enabled ? "text-accent" : ""}
+					onClick={() => keyviz.setEnabled(!keyviz.enabled)}
+				>
+					<Keyboard weight={keyviz.enabled ? "fill" : "regular"} className="size-5" />
+				</Button>
+			)}
 
 			<HudPopover
 				open={openId === "keyviz-config"}
@@ -450,14 +455,27 @@ function LaunchWindowContent() {
 					<DropdownItem onClick={() => openShortcutsConfig()} icon={<Keyboard size={16} />}>
 						{t("keyviz.configShortcuts", "Keyboard shortcuts")}
 					</DropdownItem>
-					<DropdownItem
-						onClick={() => {
-							void keyviz.openSettings();
-						}}
-						icon={<GearSix size={16} />}
-					>
-						{t("keyviz.configKeyvizSettings", "Keyviz settings")}
-					</DropdownItem>
+					{keyviz.supported && (
+						<DropdownItem
+							onClick={() => {
+								void keyviz.openSettings().then((result) => {
+									if (result.success) return;
+									const errorKey =
+										result.error === "binary_missing"
+										? "keyviz.settingsMissing"
+										: result.error === "unsupported_platform"
+											? "keyviz.settingsUnsupported"
+											: result.error === "capturing"
+												? "keyviz.settingsDuringRecording"
+												: "keyviz.settingsFailed";
+								toast.error(t(errorKey));
+								});
+							}}
+							icon={<GearSix size={16} />}
+						>
+							{t("keyviz.configKeyvizSettings", "Keyviz settings")}
+						</DropdownItem>
+					)}
 				</div>
 			</HudPopover>
 

@@ -1,4 +1,8 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+	execFile,
+	spawn,
+	type ChildProcessWithoutNullStreams,
+} from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { app } from "electron";
@@ -78,6 +82,24 @@ export const KEYVIZ_SIDECAR_LINE_EVENT = "keyviz-sidecar-line";
 
 function isWindows(): boolean {
 	return process.platform === "win32";
+}
+
+/** Standard standalone Tauri build is keyviz.exe; the Recordly sidecar is recordly-keyviz.exe. */
+function detectStandaloneKeyvizProcess(): Promise<boolean> {
+	return new Promise((resolve, reject) => {
+		execFile(
+			"tasklist.exe",
+			["/FI", "IMAGENAME eq keyviz.exe", "/FO", "CSV", "/NH"],
+			{ encoding: "utf8", timeout: 2_000, windowsHide: true },
+			(error, stdout) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+				resolve(stdout.split(/\r?\n/).some((line) => /^"keyviz\.exe",/i.test(line.trim())));
+			},
+		);
+	});
 }
 
 function pathExists(candidate: string): boolean {
@@ -178,8 +200,13 @@ function defaultSpawn(command: string, args: string[]): ChildProcessWithoutNullS
 	}) as ChildProcessWithoutNullStreams;
 }
 
+type WaitForLineResult =
+	| { ok: true; line: SidecarLine }
+	| { ok: false; code: string; message: string };
+
 interface PendingWait {
 	accepts: (type: unknown, line: SidecarLine) => boolean;
+	resolve: (result: WaitForLineResult) => void;
 	timer: ReturnType<typeof setTimeout>;
 }
 
@@ -200,6 +227,7 @@ export class KeyvizSidecarController {
 		private readonly options: {
 			spawnFn?: SpawnFn;
 			resolveBinary?: () => string | null;
+			detectStandaloneKeyviz?: () => boolean | Promise<boolean>;
 		} = {},
 	) {}
 
@@ -237,6 +265,24 @@ export class KeyvizSidecarController {
 
 		if (this.state === "capturing" && this.process) {
 			return { ok: true };
+		}
+
+		try {
+			const standaloneRunning = await (this.options.detectStandaloneKeyviz?.() ??
+				detectStandaloneKeyvizProcess());
+			if (standaloneRunning) {
+				return {
+					ok: false,
+					code: "standalone_running",
+					message: "Close the standalone Keyviz app before recording with its overlay.",
+				};
+			}
+		} catch {
+			return {
+				ok: false,
+				code: "standalone_detection_failed",
+				message: "Could not check whether standalone Keyviz is already running.",
+			};
 		}
 
 		// Dọn process cũ nếu còn (ví dụ từ lần thất bại trước).
@@ -282,6 +328,7 @@ export class KeyvizSidecarController {
 
 		this.process = child;
 		this.stdoutBuffer = "";
+		this.bufferedLines = [];
 		this.setState("starting");
 
 		// 1) Đợi ready.
@@ -313,6 +360,24 @@ export class KeyvizSidecarController {
 			return { ok: false, code: captureResult.code, message: captureResult.message };
 		}
 
+		// A failure can arrive in the same stdout chunk immediately after the ACK.
+		// Consume it before resolving prepareCapture successfully.
+		const startupFailureIndex = this.bufferedLines.findIndex(
+			(line) => line.type === "capture_failed",
+		);
+		if (startupFailureIndex !== -1) {
+			const [failure] = this.bufferedLines.splice(startupFailureIndex, 1);
+			await this.stop("capture-failed-during-startup");
+			return {
+				ok: false,
+				code: "capture_failed",
+				message:
+					typeof failure?.message === "string"
+						? failure.message
+						: "sidecar failed immediately after capture startup",
+			};
+		}
+
 		this.setState("capturing");
 		return { ok: true };
 	}
@@ -327,7 +392,7 @@ export class KeyvizSidecarController {
 
 		this.stopping = true;
 		this.setState("stopping");
-		this.clearPendingWait();
+		this.clearPendingWait("cancelled", `sidecar stopped during ${reason}`);
 
 		if (child.stdin.writable) {
 			this.sendLine(child, { type: "quit" });
@@ -382,6 +447,26 @@ export class KeyvizSidecarController {
 		const spawnFn = this.options.spawnFn ?? defaultSpawn;
 		try {
 			const child = spawnFn(binaryPath, ["--mode=settings"]);
+			await new Promise<void>((resolve, reject) => {
+				if (child.pid !== undefined) {
+					resolve();
+					return;
+				}
+				const onSpawn = () => {
+					cleanup();
+					resolve();
+				};
+				const onError = (error: Error) => {
+					cleanup();
+					reject(error);
+				};
+				const cleanup = () => {
+					child.removeListener("spawn", onSpawn);
+					child.removeListener("error", onError);
+				};
+				child.once("spawn", onSpawn);
+				child.once("error", onError);
+			});
 			child.on("error", (error) => {
 				console.error("[keyviz-sidecar:settings] process error:", error);
 			});
@@ -391,7 +476,8 @@ export class KeyvizSidecarController {
 			this.settingsProcess = child;
 			return { success: true };
 		} catch (error) {
-			return { success: false, error: String(error) };
+			console.error("[keyviz-sidecar:settings] failed to spawn:", error);
+			return { success: false, error: "spawn_failed" };
 		}
 	}
 
@@ -462,10 +548,7 @@ export class KeyvizSidecarController {
 		acceptTypes: string[],
 		timeoutMs: number,
 		context: string,
-	): Promise<
-		| { ok: true; line: SidecarLine }
-		| { ok: false; code: string; message: string }
-	> {
+	): Promise<WaitForLineResult> {
 		const acceptSet = new Set(acceptTypes);
 
 		// Tiêu thụ line đã buffer trước (trường hợp line đến cùng tick với line trước đó).
@@ -493,12 +576,17 @@ export class KeyvizSidecarController {
 		}
 
 		return new Promise((resolve) => {
+			let pending: PendingWait;
 			const timer = setTimeout(() => {
-				this.pendingWait = null;
+				if (this.pendingWait === pending) {
+					this.pendingWait = null;
+				}
 				resolve({ ok: false, code: "timeout", message: `timeout ${context}` });
 			}, timeoutMs);
 
-			this.pendingWait = {
+			pending = {
+				resolve,
+				timer,
 				accepts: (lineType, line) => {
 					if (typeof lineType !== "string") {
 						return false;
@@ -527,16 +615,22 @@ export class KeyvizSidecarController {
 					resolve({ ok: true, line });
 					return true;
 				},
-				timer,
 			};
+			this.pendingWait = pending;
 		});
 	}
 
-	private clearPendingWait(): void {
-		if (this.pendingWait) {
-			clearTimeout(this.pendingWait.timer);
-			this.pendingWait = null;
+	private clearPendingWait(
+		code = "process_exited",
+		message = "sidecar process exited while waiting for a response",
+	): void {
+		const pending = this.pendingWait;
+		if (!pending) {
+			return;
 		}
+		clearTimeout(pending.timer);
+		this.pendingWait = null;
+		pending.resolve({ ok: false, code, message });
 	}
 
 	private resolveQuitWaiters(): void {
@@ -557,7 +651,7 @@ export class KeyvizSidecarController {
 		}
 		this.process = null;
 		const wasCapturing = this.state === "capturing";
-		this.clearPendingWait();
+		this.clearPendingWait("process_exited", "sidecar exited before the handshake completed");
 		// stop() đang chờ process thoát — đánh thức ngay, không đợi grace timer.
 		this.resolveQuitWaiters();
 

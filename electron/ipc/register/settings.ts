@@ -122,9 +122,13 @@ export function registerSettingsHandlers() {
 	ipcMain.handle("save-shortcuts", async (_, shortcuts: unknown) => {
 		try {
 			await fs.writeFile(SHORTCUTS_FILE, JSON.stringify(shortcuts, null, 2), "utf-8");
-			// Re-apply global recording hotkeys theo config mới; kết quả qua global-shortcuts:register.
-			const { registerGlobalRecordingShortcuts } = await import("../globalShortcuts");
-			void registerGlobalRecordingShortcuts();
+			for (const window of BrowserWindow.getAllWindows()) {
+				if (!window.isDestroyed()) {
+					window.webContents.send("shortcuts:changed", shortcuts);
+				}
+			}
+			// The shortcut dialog explicitly re-registers after this atomic save so it can
+			// show per-binding success/failure instead of silently dropping the result.
 			return { success: true };
 		} catch (error) {
 			console.error("Failed to save shortcuts:", error);

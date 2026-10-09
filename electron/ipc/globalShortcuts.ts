@@ -1,6 +1,7 @@
 import { ipcMain, globalShortcut } from "electron";
 import fs from "node:fs/promises";
 import { getHudOverlayWindow } from "../windows";
+import { DEFAULT_RECORDING_SHORTCUTS } from "../../src/lib/shortcuts";
 import { SHORTCUTS_FILE } from "./constants";
 import { parseJsonWithByteOrderMark } from "./utils";
 
@@ -9,8 +10,8 @@ import { parseJsonWithByteOrderMark } from "./utils";
  *
  * - Persistence: cùng shortcuts.json với editor shortcuts. Schema mới:
  *     { "editor": ShortcutsConfig, "recording": { start, stop, pauseResume } }
- *   Schema cũ (flat ShortcutsConfig) được đọc lại như editor config; recording
- *   hotkeys chưa có → KHÔNG đăng ký, trả registered=false với code "unset".
+ *   Schema cũ (flat ShortcutsConfig) được giữ làm editor config; recording hotkeys
+ *   chưa lưu sẽ dùng chung defaults với renderer để UI và OS không lệch nhau.
  * - Trigger: hotkey khôi phục HUD (nếu minimized) rồi đẩy "recording-hotkey"
  *   tới HUD renderer để xử lý như bấm nút HUD — state luôn nhất quán.
  * - Register failure (accelerator bị app khác giữ) KHÔNG nuốt: trả về per-binding
@@ -98,26 +99,30 @@ export async function readGlobalShortcutsSnapshot(): Promise<GlobalShortcutsSnap
 		const data = await fs.readFile(SHORTCUTS_FILE, "utf-8");
 		const parsed = parseJsonWithByteOrderMark<Record<string, unknown>>(data);
 		if (!parsed || typeof parsed !== "object") {
-			return { recording: {}, editor: {} };
+			return { recording: DEFAULT_RECORDING_SHORTCUTS, editor: {} };
 		}
 
 		// Schema mới: { editor, recording }. Schema cũ: flat ShortcutsConfig.
 		const looksLikeNewSchema = "editor" in parsed || "recording" in parsed;
 		if (!looksLikeNewSchema) {
-			return { recording: {}, editor: parsed as Record<string, ShortcutBindingLike> };
+			return {
+				recording: DEFAULT_RECORDING_SHORTCUTS,
+				editor: parsed as Record<string, ShortcutBindingLike>,
+			};
 		}
 
 		const editor =
 			parsed.editor && typeof parsed.editor === "object"
 				? (parsed.editor as Record<string, ShortcutBindingLike>)
 				: {};
-		const recording =
+		const savedRecording =
 			parsed.recording && typeof parsed.recording === "object"
 				? (parsed.recording as Partial<Record<RecordingHotkeyAction, ShortcutBindingLike>>)
 				: {};
+		const recording = { ...DEFAULT_RECORDING_SHORTCUTS, ...savedRecording };
 		return { editor, recording };
 	} catch {
-		return { recording: {}, editor: {} };
+		return { recording: DEFAULT_RECORDING_SHORTCUTS, editor: {} };
 	}
 }
 

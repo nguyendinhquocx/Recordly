@@ -200,7 +200,7 @@ PKGBUILD, desktop entry, release sync, and optional **local-from-source** packag
 sudo apt install build-essential cmake libx11-dev libxtst-dev libxrandr-dev libxt-dev
 ```
 
-**Windows:** Visual Studio 2022 (or Build Tools) with the C++ workload and CMake.
+**Windows:** Visual Studio 2022 (or Build Tools) with the C++ workload and CMake. Building the Windows package with the Keyviz overlay also requires [Rust](https://rustup.rs/) and pnpm 10.18.2 (or the version pinned by `keyviz/package.json`).
 
 ### Steps
 
@@ -223,6 +223,19 @@ Target-specific build commands are also available:
 - `npm run build:win`
 - `npm run build:linux`
 
+On Windows, `npm run build:win` builds the bundled Keyviz sidecar automatically. For development with `npm run dev`, run `npm run build:keyviz-sidecar` once after installing Rust and pnpm.
+
+### Verify the Windows integration
+
+```bash
+npm run typecheck
+npm run i18n:check
+npm test -- electron/ipc/keyvizSidecar.test.ts electron/ipc/globalShortcuts.test.ts
+npm run smoke:packaged-binaries
+```
+
+Run the packaged-binary smoke after building the Windows package.
+
 ## Keyboard overlay during recording (Windows, optional)
 
 On Windows, Recordly can display a live keyboard/mouse overlay (Keyviz) in your recordings:
@@ -232,7 +245,7 @@ On Windows, Recordly can display a live keyboard/mouse overlay (Keyviz) in your 
 - Configure shortcuts — including global recording hotkeys (start / stop / pause-resume, default `Ctrl+Alt+Shift+R` / `S` / `P`) — under "Keyboard shortcuts" on the HUD before recording. Hotkeys work while Recordly runs, even when it is not focused, and the control chords are filtered out of the overlay.
 - The overlay process only runs while a recording is actually capturing; it is stopped on pause, stop, cancel, and app exit, and it exits on its own if Recordly dies.
 
-Windows-only for now. The overlay executable is bundled with the Windows installer; no separate Keyviz installation is needed, and an existing standalone Keyviz installation is left untouched.
+Windows-only for now. The overlay executable is bundled with the Windows installer; no separate Keyviz installation is needed. If the standalone Keyviz app is already running, Recordly asks you to close it before starting its overlay and never kills or overwrites that app.
 
 ---
 

@@ -11,12 +11,10 @@
 //! Sidecar → parent:
 //! - `{"type":"ready"}` — once, right after Tauri setup finished (overlay visible in
 //!   capture mode, settings window built in settings mode).
-//! - `{"type":"capture_started"}` — the input listener was spawned after `start_capture`.
+//! - `{"type":"capture_started"}` — the low-level keyboard and mouse hooks are installed.
 //! - `{"type":"capture_failed","code":"hook_install_failed","message":"..."}` — the
-//!   low-level keyboard hook could not be installed. Emitted instead of
-//!   `capture_started` when the synchronous pre-flight probe fails, or (rare race)
-//!   right after `capture_started` if rdev's `listen()` fails later; the parent must
-//!   treat `capture_failed` as terminal regardless of ordering.
+//!   hook could not be installed or its listener failed after startup; the parent must
+//!   treat this message as terminal regardless of ordering.
 //!
 //! Parent → sidecar:
 //! - `{"type":"start_capture","suppressed_shortcuts":[[...], ...]}` — starts the global
@@ -47,7 +45,10 @@
 //! - every other key is emitted normally; mouse events are never suppressed.
 //!
 //! Sidecar modes require the parent to keep the child's stdio piped.
-use std::io::{BufRead, Write};
+use std::{
+    io::{BufRead, Write},
+    time::Duration,
+};
 
 use serde_json::{json, Value};
 use tauri::{Manager, Wry};
@@ -168,9 +169,7 @@ fn handle_command(app: &tauri::AppHandle<Wry>, mode: RunMode, line: &str) {
             eprintln!("[recordly-keyviz] quit requested; exiting cleanly");
             std::process::exit(0);
         }
-        other => eprintln!(
-            "[recordly-keyviz] ignoring stdin command {other:?} in mode {mode:?}"
-        ),
+        other => eprintln!("[recordly-keyviz] ignoring stdin command {other:?} in mode {mode:?}"),
     }
 }
 
@@ -184,39 +183,54 @@ fn start_capture(app: &tauri::AppHandle<Wry>, value: &Value) {
             emit_json(&json!({ "type": "capture_started" }));
             return;
         }
-        app_state.suppressed_chords = normalize_chords(&parse_raw_chords(
-            value.get("suppressed_shortcuts"),
-        ));
+        app_state.suppressed_chords =
+            normalize_chords(&parse_raw_chords(value.get("suppressed_shortcuts")));
         app_state.listening = true;
         app_state.capture_started = true;
     }
 
-    // Pre-flight the low-level keyboard hook so an immediate install failure is
-    // reported as `capture_failed` instead of a silent timeout on the parent side.
-    // rdev's listen() blocks forever on success, so this synchronous probe is the
-    // only way to answer before the message loop takes over the thread.
-    if let Err(message) = probe_keyboard_hook() {
-        eprintln!("[recordly-keyviz] hook pre-flight failed: {message}");
-        {
-            let state = app.state::<std::sync::Mutex<AppState>>();
-            let mut app_state = state.lock().unwrap();
-            app_state.listening = false;
-            app_state.capture_started = false;
+    // The listener sends readiness only after Windows has installed the actual hooks.
+    let (ready_sender, ready_receiver) = std::sync::mpsc::channel();
+    start_listener(app.clone(), None, Some(ready_sender));
+    match ready_receiver.recv_timeout(Duration::from_secs(10)) {
+        Ok(Ok(())) => emit_json(&json!({ "type": "capture_started" })),
+        Ok(Err(message)) => {
+            eprintln!("[recordly-keyviz] hook install failed: {message}");
+            reset_capture_state(app);
+            emit_json(&json!({
+                "type": "capture_failed",
+                "code": "hook_install_failed",
+                "message": message,
+            }));
+            // Exit so the OS releases a partially installed hook.
+            std::process::exit(1);
         }
-        emit_json(&json!({
-            "type": "capture_failed",
-            "code": "hook_install_failed",
-            "message": message,
-        }));
-        return;
+        Err(error) => {
+            let message = match error {
+                std::sync::mpsc::RecvTimeoutError::Timeout => {
+                    "Timed out while installing the input hook".to_string()
+                }
+                std::sync::mpsc::RecvTimeoutError::Disconnected => {
+                    "Input listener exited before installing the hook".to_string()
+                }
+            };
+            eprintln!("[recordly-keyviz] hook startup failed: {message}");
+            reset_capture_state(app);
+            emit_json(&json!({
+                "type": "capture_failed",
+                "code": "hook_install_failed",
+                "message": message,
+            }));
+            std::process::exit(1);
+        }
     }
+}
 
-    // No tray toggle in sidecar modes: lifecycle is owned by the parent process.
-    start_listener(app.clone(), None);
-    emit_json(&json!({ "type": "capture_started" }));
-    // NOTE: if rdev's listen() fails after this point (rare race between the probe
-    // above and the real install), the listener thread also reports
-    // `capture_failed` on stdout; the parent must treat it as terminal.
+fn reset_capture_state(app: &tauri::AppHandle<Wry>) {
+    let state = app.state::<std::sync::Mutex<AppState>>();
+    let mut app_state = state.lock().unwrap();
+    app_state.listening = false;
+    app_state.capture_started = false;
 }
 
 /// Accepts `[["ControlLeft","Alt","ShiftLeft","KeyR"], ...]` and the lenient
@@ -252,38 +266,4 @@ fn parse_raw_chords(value: Option<&Value>) -> Vec<Vec<String>> {
         }
     }
     chords
-}
-
-/// Synchronous WH_KEYBOARD_LL install probe: installs a pass-through hook for
-/// microseconds, unhooks it, and reports the OS error verbatim. This is what lets
-/// the sidecar distinguish `capture_failed` ("hook cannot be installed at all")
-/// from a running listener.
-#[cfg(target_os = "windows")]
-fn probe_keyboard_hook() -> Result<(), String> {
-    use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
-    use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, SetWindowsHookExA, UnhookWindowsHookEx, HOOKPROC, WH_KEYBOARD_LL,
-    };
-
-    // Pass-through procedure; installed for microseconds only.
-    unsafe extern "system" fn probe_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-        unsafe { CallNextHookEx(None, code, wparam, lparam) }
-    }
-
-    let hook_proc: HOOKPROC = Some(probe_proc);
-    unsafe {
-        match SetWindowsHookExA(WH_KEYBOARD_LL, hook_proc, None, 0) {
-            Ok(hook) => {
-                UnhookWindowsHookEx(hook);
-                Ok(())
-            }
-            Err(err) => Err(format!("SetWindowsHookExA(WH_KEYBOARD_LL) failed: {err}")),
-        }
-    }
-}
-
-#[cfg(not(target_os = "windows"))]
-fn probe_keyboard_hook() -> Result<(), String> {
-    // The sidecar is Windows-only in this revision; other hosts always "succeed".
-    Ok(())
 }

@@ -994,6 +994,7 @@ interface Window {
 		}>;
 		getShortcuts: () => Promise<Record<string, unknown> | null>;
 		saveShortcuts: (shortcuts: unknown) => Promise<{ success: boolean; error?: string }>;
+		onShortcutsChanged: (callback: (shortcuts: Record<string, unknown>) => void) => () => void;
 		/** Keyviz sidecar: trạng thái process/listener (Windows only). */
 		keyvizGetStatus: () => Promise<{
 			supported: boolean;

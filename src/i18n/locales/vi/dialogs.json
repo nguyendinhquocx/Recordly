@@ -65,6 +65,7 @@
 		"recordingPauseResume": "Tạm dừng / tiếp tục quay",
 		"globalActive": "Đang hoạt động toàn hệ thống",
 		"globalUnavailable": "Không đăng ký được — tổ hợp này có thể đang bị app khác giữ",
-		"conflictsWithRecording": "Trùng với phím quay: {{action}}"
+		"conflictsWithRecording": "Trùng với phím quay: {{action}}",
+		"saveFailed": "Không lưu được phím tắt. Kiểm tra quyền ghi cài đặt của Recordly rồi thử lại."
 	}
 }

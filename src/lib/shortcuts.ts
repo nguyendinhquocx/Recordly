@@ -19,6 +19,22 @@ export interface ShortcutBinding {
 
 export type ShortcutsConfig = Record<ShortcutAction, ShortcutBinding>;
 
+export interface RecordingShortcutsConfig {
+	start: ShortcutBinding;
+	stop: ShortcutBinding;
+	"pause-resume": ShortcutBinding;
+}
+
+export const RECORDING_SHORTCUT_ACTIONS = ["start", "stop", "pause-resume"] as const;
+export type RecordingShortcutAction = (typeof RECORDING_SHORTCUT_ACTIONS)[number];
+
+/** Global recording hotkeys shared by the renderer and Electron main process. */
+export const DEFAULT_RECORDING_SHORTCUTS: RecordingShortcutsConfig = {
+	start: { key: "r", ctrl: true, alt: true, shift: true },
+	stop: { key: "s", ctrl: true, alt: true, shift: true },
+	"pause-resume": { key: "p", ctrl: true, alt: true, shift: true },
+};
+
 export interface FixedShortcut {
 	/** i18n key in the `shortcuts` namespace — translate with t() at render time. */
 	label: string;
@@ -72,6 +88,37 @@ export function findConflict(
 			return { type: "configurable", action };
 		}
 	}
+	return null;
+}
+
+export type RecordingShortcutConflict =
+	| { type: "fixed"; label: string }
+	| { type: "editor"; action: ShortcutAction }
+	| { type: "recording"; action: RecordingShortcutAction };
+
+/** Check a global recording binding against every fixed, editor, and other recording binding. */
+export function findRecordingShortcutConflict(
+	binding: ShortcutBinding,
+	editor: ShortcutsConfig,
+	recording: RecordingShortcutsConfig,
+	exceptRecordingAction?: RecordingShortcutAction,
+): RecordingShortcutConflict | null {
+	const fixed = FIXED_SHORTCUTS.find((shortcut) =>
+		shortcut.bindings.some((candidate) => bindingsEqual(candidate, binding)),
+	);
+	if (fixed) return { type: "fixed", label: fixed.label };
+
+	const editorAction = SHORTCUT_ACTIONS.find((action) =>
+		bindingsEqual(editor[action], binding),
+	);
+	if (editorAction) return { type: "editor", action: editorAction };
+
+	const recordingAction = RECORDING_SHORTCUT_ACTIONS.find(
+		(action) =>
+			action !== exceptRecordingAction && bindingsEqual(recording[action], binding),
+	);
+	if (recordingAction) return { type: "recording", action: recordingAction };
+
 	return null;
 }
 

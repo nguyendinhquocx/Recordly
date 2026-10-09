@@ -63,16 +63,13 @@ describe("registerGlobalRecordingShortcuts", () => {
 		unregisterAllGlobalRecordingShortcuts();
 	});
 
-	it("reports unset when no recording hotkeys are configured (legacy flat schema)", async () => {
+	it("registers defaults when the saved config is a legacy flat schema", async () => {
 		mockShortcutsFile({ addZoom: { key: "z" } });
 		const results = await registerGlobalRecordingShortcuts();
 
-		expect(results).toHaveLength(3);
-		for (const result of results) {
-			expect(result.registered).toBe(false);
-			expect(result.code).toBe("unset");
-		}
-		expect(globalShortcutMock.register).not.toHaveBeenCalled();
+		expect(results.map((result) => result.action)).toEqual(["start", "stop", "pause-resume"]);
+		expect(results.map((result) => result.registered)).toEqual([true, true, true]);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(3);
 	});
 
 	it("registers configured hotkeys with correct accelerators", async () => {
@@ -112,7 +109,7 @@ describe("registerGlobalRecordingShortcuts", () => {
 			code: "register_failed",
 			accelerator: "CommandOrControl+Alt+Shift+R",
 		});
-		expect(results[1].code).toBe("unset");
+		expect(results[1].code).toBe("register_failed");
 	});
 
 	it("unregisters previous accelerators when re-registering with new config", async () => {
@@ -128,15 +125,16 @@ describe("registerGlobalRecordingShortcuts", () => {
 		await registerGlobalRecordingShortcuts();
 
 		expect(globalShortcutMock.unregister).toHaveBeenCalledWith("CommandOrControl+Alt+Shift+R");
-		expect(globalShortcutMock.register).toHaveBeenLastCalledWith(
+		expect(globalShortcutMock.register).toHaveBeenCalledWith(
 			"CommandOrControl+Alt+Shift+T",
 			expect.any(Function),
 		);
 	});
 
-	it("handles missing shortcuts file gracefully", async () => {
+	it("registers default hotkeys when no shortcuts file exists", async () => {
 		readFileMock.mockRejectedValue(new Error("ENOENT"));
 		const results = await registerGlobalRecordingShortcuts();
-		expect(results.every((result) => result.code === "unset")).toBe(true);
+		expect(results.map((result) => result.registered)).toEqual([true, true, true]);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(3);
 	});
 });

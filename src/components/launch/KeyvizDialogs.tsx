@@ -11,6 +11,17 @@ import { useScopedT } from "@/contexts/I18nContext";
 import type { KeyvizSidecarControl } from "@/hooks/useKeyvizSidecar";
 import styles from "./LaunchWindow.module.css";
 
+const ERROR_REASON_KEYS: Record<string, string> = {
+	standalone_running: "keyviz.errorReasonStandaloneRunning",
+	standalone_detection_failed: "keyviz.errorReasonDetectionFailed",
+	binary_missing: "keyviz.errorReasonBinaryMissing",
+	spawn_failed: "keyviz.errorReasonSpawnFailed",
+	timeout: "keyviz.errorReasonTimeout",
+	capture_failed: "keyviz.errorReasonCaptureFailed",
+	unsupported_platform: "keyviz.errorReasonUnsupported",
+	process_exited: "keyviz.errorReasonExited",
+};
+
 /**
  * Dialog lỗi khởi động Keyviz trước khi quay: retry / quay không Keyviz / hủy.
  * Render khi useKeyvizSidecar có pendingDecision (flow await trong prepareForRecording).
@@ -33,8 +44,13 @@ export function KeyvizStartupErrorDialog({ keyviz }: { keyviz: KeyvizSidecarCont
 						"keyviz.errorMessage",
 						"The keyboard overlay (Keyviz) could not start. Recording is paused until you choose.",
 					)}
-					{decision?.message ? (
-						<span className="mt-2 block text-xs text-foreground/50">{decision.message}</span>
+					{decision ? (
+						<span className="mt-2 block text-xs text-foreground/50">
+							{t(
+								ERROR_REASON_KEYS[decision.code] ?? "keyviz.errorReasonUnknown",
+								"The sidecar could not be started.",
+							)}
+						</span>
 					) : null}
 				</p>
 				<DialogFooter className="gap-2">

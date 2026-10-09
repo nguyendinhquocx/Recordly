@@ -109,6 +109,19 @@
 		"errorCancel": "Hủy quay",
 		"exitBanner": "Overlay phím bấm bị ngắt giữa lúc quay.",
 		"exitContinue": "Tiếp tục không overlay",
-		"exitStopAndSave": "Dừng và lưu"
+		"exitStopAndSave": "Dừng và lưu",
+		"errorReasonStandaloneRunning": "Keyviz độc lập đang mở. Hãy đóng nó rồi thử lại; Recordly sẽ không tự tắt ứng dụng đó.",
+		"errorReasonDetectionFailed": "Không kiểm tra được Keyviz độc lập có đang chạy hay không. Hãy đóng Keyviz rồi thử lại.",
+		"errorReasonBinaryMissing": "Không tìm thấy tệp Keyviz đi kèm. Hãy cài lại hoặc dựng lại bản Windows của Recordly.",
+		"errorReasonSpawnFailed": "Không khởi động được tiến trình Keyviz. Hãy thử mở lại Recordly.",
+		"errorReasonTimeout": "Keyviz khởi động quá lâu. Thử lại hoặc quay không có lớp phím.",
+		"errorReasonCaptureFailed": "Không bật được bộ nghe phím của Keyviz. Hãy kiểm tra quyền cần thiết hoặc quay không có lớp phím.",
+		"errorReasonUnsupported": "Phiên bản này chỉ hỗ trợ Keyviz trên Windows.",
+		"errorReasonExited": "Tiến trình Keyviz đã thoát trước khi bắt đầu quay.",
+		"errorReasonUnknown": "Có lỗi khi khởi động lớp phím. Thử lại hoặc quay không có lớp phím.",
+		"settingsMissing": "Không tìm thấy tệp Keyviz đi kèm; hãy dựng lại bản Windows của Recordly.",
+		"settingsUnsupported": "Cửa sổ Keyviz Settings chỉ có trên Windows.",
+		"settingsDuringRecording": "Hãy dừng hoặc tạm dừng quay rồi mở Keyviz Settings.",
+		"settingsFailed": "Không mở được Keyviz Settings. Hãy thử lại."
 	}
 }

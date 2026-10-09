@@ -16,6 +16,7 @@ import {
 	bindingsEqual,
 	FIXED_SHORTCUTS,
 	findConflict,
+	findRecordingShortcutConflict,
 	formatBinding,
 	SHORTCUT_ACTIONS,
 	SHORTCUT_LABELS,
@@ -48,9 +49,7 @@ export function ShortcutsConfigDialog() {
 		isMac,
 		isConfigOpen,
 		closeConfig,
-		setShortcuts,
 		persistShortcuts,
-		persistRecordingShortcuts,
 	} = useShortcuts();
 
 	const [draft, setDraft] = useState<ShortcutsConfig>(shortcuts);
@@ -67,15 +66,35 @@ export function ShortcutsConfigDialog() {
 	} | null>(null);
 
 	useEffect(() => {
-		if (isConfigOpen) {
-			setDraft(shortcuts);
-			setRecordingDraft(recordingShortcuts);
-			setCaptureFor(null);
-			setCaptureForRecording(null);
-			setConflict(null);
-			setRegisterFailures({});
-		}
+		if (!isConfigOpen) return;
+		setDraft(shortcuts);
+		setRecordingDraft(recordingShortcuts);
+		setCaptureFor(null);
+		setCaptureForRecording(null);
+		setConflict(null);
 	}, [isConfigOpen, shortcuts, recordingShortcuts]);
+
+	useEffect(() => {
+		if (!isConfigOpen) return;
+		setRegisterFailures({});
+		let cancelled = false;
+		void window.electronAPI?.registerGlobalRecordingHotkeys?.().then((results) => {
+			if (cancelled) return;
+			const statuses: Record<string, boolean> = {};
+			for (const result of results) {
+				statuses[result.action] = !result.registered;
+			}
+			setRegisterFailures(statuses);
+		}).catch(() => {
+			if (cancelled) return;
+			setRegisterFailures(
+				Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
+			);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [isConfigOpen]);
 
 	/** Chord recording có trùng binding cho không (dùng cho editor capture + recording capture). */
 	const findRecordingConflict = useCallback(
@@ -166,33 +185,44 @@ export function ShortcutsConfigDialog() {
 			const target = captureForRecording;
 			setCaptureForRecording(null);
 
-			// Không cho trùng fixed shortcut và shortcut editor.
-			const editorConflict = findConflict(binding, "addZoom", draft);
-			if (editorConflict?.type === "fixed") {
-				toast.error(t("shortcutsConfig.reserved", undefined, { label: tShortcuts(editorConflict.label) }));
-				return;
-			}
-			if (editorConflict?.type === "configurable") {
+			// Check every fixed, editor, and recording binding; no editor action is exempt.
+			const crossConflict = findRecordingShortcutConflict(
+				binding,
+				draft,
+				recordingDraft,
+				target,
+			);
+			if (crossConflict?.type === "fixed") {
 				toast.error(
-					t("shortcutsConfig.alreadyUsedBy", undefined, {
-						action: tShortcuts(SHORTCUT_LABELS[editorConflict.action]),
+					t("shortcutsConfig.reserved", undefined, {
+						label: tShortcuts(crossConflict.label),
 					}),
 				);
 				return;
 			}
-
-			const recordingConflict = findRecordingConflict(binding, target);
-			if (recordingConflict) {
+			if (crossConflict?.type === "editor") {
+				toast.error(
+					t("shortcutsConfig.alreadyUsedBy", undefined, {
+						action: tShortcuts(SHORTCUT_LABELS[crossConflict.action]),
+					}),
+				);
+				return;
+			}
+			if (crossConflict?.type === "recording") {
 				toast.error(
 					t("shortcutsConfig.conflictsWithRecording", undefined, {
-						action: t(RECORDING_LABEL_KEYS[recordingConflict]),
+						action: t(RECORDING_LABEL_KEYS[crossConflict.action]),
 					}),
 				);
 				return;
 			}
 
 			setRecordingDraft((prev) => ({ ...prev, [target]: binding }));
-			setRegisterFailures((prev) => ({ ...prev, [target]: false }));
+			setRegisterFailures((prev) => {
+				const next = { ...prev };
+				delete next[target];
+				return next;
+			});
 		};
 
 		window.addEventListener("keydown", handleCapture, { capture: true });
@@ -213,36 +243,55 @@ export function ShortcutsConfigDialog() {
 	const handleCancelConflict = useCallback(() => setConflict(null), []);
 
 	const handleSave = useCallback(async () => {
-		setShortcuts(draft);
-		await persistShortcuts(draft);
-		// Persist recording hotkeys (schema mới) rồi đăng ký global; lỗi hiển thị cạnh binding.
-		await persistRecordingShortcuts(recordingDraft);
+		try {
+			// Save cả hai nhóm trong một IPC để editor draft không bị ghi đè bởi closure cũ.
+			await persistShortcuts(draft, recordingDraft);
+		} catch {
+			toast.error(t("shortcutsConfig.saveFailed", "Could not save shortcuts."));
+			return;
+		}
+
 		try {
 			const results = await window.electronAPI?.registerGlobalRecordingHotkeys?.();
 			if (results) {
 				const failures: Record<string, boolean> = {};
 				for (const result of results) {
-					failures[result.action] = !result.registered && result.code !== "unset";
+					failures[result.action] = !result.registered;
 				}
 				setRegisterFailures(failures);
 				if (Object.values(failures).some(Boolean)) {
 					toast.warning(t("shortcutsConfig.globalUnavailable"));
+					return;
 				}
 			}
 		} catch {
-			/* IPC missing — vẫn giữ config */
+			setRegisterFailures(
+				Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
+			);
+			toast.warning(t("shortcutsConfig.globalUnavailable"));
+			return;
 		}
+
 		toast.success(t("shortcutsConfig.saved"));
-	}, [draft, recordingDraft, setShortcuts, persistShortcuts, persistRecordingShortcuts, t]);
+		setCaptureFor(null);
+		setCaptureForRecording(null);
+		setConflict(null);
+		closeConfig();
+	}, [draft, recordingDraft, persistShortcuts, closeConfig, t]);
 
 	const handleReset = useCallback(() => {
 		setDraft({ ...DEFAULT_SHORTCUTS });
 		setRecordingDraft({ ...DEFAULT_RECORDING_SHORTCUTS });
+		setCaptureFor(null);
+		setCaptureForRecording(null);
+		setConflict(null);
+		setRegisterFailures({});
 		toast.info(t("shortcutsConfig.resetNotice"));
 	}, [t]);
 
 	const handleClose = useCallback(() => {
 		setCaptureFor(null);
+		setCaptureForRecording(null);
 		setConflict(null);
 		closeConfig();
 	}, [closeConfig]);
@@ -290,7 +339,8 @@ export function ShortcutsConfigDialog() {
 											}
 											onClick={() => {
 												setConflict(null);
-												setCaptureFor(isCapturing ? null : action);
+												setCaptureForRecording(null);
+								setCaptureFor(isCapturing ? null : action);
 											}}
 											title={
 												isCapturing
@@ -353,6 +403,7 @@ export function ShortcutsConfigDialog() {
 						{RECORDING_SHORTCUT_ACTIONS.map((action) => {
 							const isCapturing = captureForRecording === action;
 							const registerFailed = registerFailures[action] === true;
+							const registerActive = registerFailures[action] === false;
 							return (
 								<div key={action}>
 									<div className="flex items-center justify-between gap-4 border-b border-separator py-3">
@@ -373,7 +424,8 @@ export function ShortcutsConfigDialog() {
 												}
 											onClick={() => {
 													setConflict(null);
-													setCaptureForRecording(isCapturing ? null : action);
+													setCaptureFor(null);
+								setCaptureForRecording(isCapturing ? null : action);
 												}}
 											title={
 												isCapturing
@@ -394,11 +446,15 @@ export function ShortcutsConfigDialog() {
 												: formatBinding(recordingDraft[action], isMac)}
 										</Button>
 									</div>
-									{registerFailed && (
+									{registerFailed ? (
 										<p className="px-1 py-1 mb-0.5 text-xs text-warning">
 											{t("shortcutsConfig.globalUnavailable")}
 										</p>
-									)}
+									) : registerActive ? (
+										<p className="px-1 py-1 mb-0.5 text-xs text-muted">
+											{t("shortcutsConfig.globalActive")}
+										</p>
+									) : null}
 							</div>
 						);
 						})}
