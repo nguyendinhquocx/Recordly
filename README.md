@@ -23,8 +23,8 @@ Recordly is an open-source screen recorder and editor for walkthroughs, demos, a
 > [!IMPORTANT]
 > The keyboard overlay and recording hotkeys are **Windows-only** in this fork. Everything else works cross-platform as upstream.
 
-> [!NOTE]
-> **No prebuilt releases yet.** This fork publishes installers later; for now, build from source (below). Upstream [releases](https://github.com/webadderallorg/Recordly/releases) exist but do not include the fork features.
+> [!TIP]
+> **Windows installer:** grab the latest build from the fork's [Releases](https://github.com/nguyendinhquocx/Recordly/releases). Upstream [releases](https://github.com/webadderallorg/Recordly/releases) exist but do not include the fork features; macOS/Linux builds are source-only for now.
 
 ---
 
