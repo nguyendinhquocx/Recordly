@@ -1083,11 +1083,22 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("keyviz:state-changed", listener);
 		return () => ipcRenderer.removeListener("keyviz:state-changed", listener);
 	},
+	onKeyvizUnexpectedExit: (callback: () => void) => {
+		const listener = () => callback();
+		ipcRenderer.on("keyviz:unexpected-exit", listener);
+		return () => ipcRenderer.removeListener("keyviz:unexpected-exit", listener);
+	},
 	getGlobalShortcutsSnapshot: () => {
 		return ipcRenderer.invoke("global-shortcuts:read");
 	},
 	registerGlobalRecordingHotkeys: () => {
 		return ipcRenderer.invoke("global-shortcuts:register");
+	},
+	suspendGlobalRecordingHotkeys: () => {
+		return ipcRenderer.sendSync("global-shortcuts:suspend") === true;
+	},
+	resumeGlobalRecordingHotkeys: () => {
+		return ipcRenderer.invoke("global-shortcuts:resume");
 	},
 	onRecordingHotkey: (
 		callback: (action: "start" | "stop" | "pause-resume") => void,

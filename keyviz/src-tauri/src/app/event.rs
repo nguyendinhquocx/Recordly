@@ -191,6 +191,19 @@ pub fn start_listener(
                 }));
                 std::process::exit(1);
             }
+        } else if readiness_sent.load(Ordering::SeqCst) {
+            let sidecar_capture = error_reporter
+                .try_state::<Mutex<AppState>>()
+                .map(|state| state.lock().unwrap().capture_started)
+                .unwrap_or(false);
+            if sidecar_capture {
+                emit_json(&serde_json::json!({
+                    "type": "capture_failed",
+                    "code": "listener_stopped",
+                    "message": "The global input listener stopped unexpectedly.",
+                }));
+                std::process::exit(1);
+            }
         }
     });
 }

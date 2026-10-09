@@ -164,7 +164,10 @@ fn handle_command(app: &tauri::AppHandle<Wry>, mode: RunMode, line: &str) {
         return;
     };
     match value.get("type").and_then(Value::as_str) {
-        Some("start_capture") => start_capture(app, &value),
+        Some("start_capture") if mode == RunMode::Capture => start_capture(app, &value),
+        Some("start_capture") => {
+            eprintln!("[recordly-keyviz] ignoring start_capture outside capture mode ({mode:?})")
+        }
         Some("quit") => {
             eprintln!("[recordly-keyviz] quit requested; exiting cleanly");
             std::process::exit(0);

@@ -73,6 +73,11 @@ export function bindingsEqual(a: ShortcutBinding, b: ShortcutBinding): boolean {
 	);
 }
 
+/** Prevent global recording shortcuts from hijacking ordinary typing. */
+export function hasGlobalRecordingModifier(binding: ShortcutBinding): boolean {
+	return !!binding.ctrl || !!binding.alt;
+}
+
 export function findConflict(
 	binding: ShortcutBinding,
 	forAction: ShortcutAction,

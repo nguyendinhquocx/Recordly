@@ -66,6 +66,7 @@
 		"globalActive": "Đang hoạt động toàn hệ thống",
 		"globalUnavailable": "Không đăng ký được — tổ hợp này có thể đang bị app khác giữ",
 		"conflictsWithRecording": "Trùng với phím quay: {{action}}",
-		"saveFailed": "Không lưu được phím tắt. Kiểm tra quyền ghi cài đặt của Recordly rồi thử lại."
+		"saveFailed": "Không lưu được phím tắt. Kiểm tra quyền ghi cài đặt của Recordly rồi thử lại.",
+		"globalModifierRequired": "Phím quay cần Ctrl/Command hoặc Alt để không chiếm phím gõ thường."
 	}
 }

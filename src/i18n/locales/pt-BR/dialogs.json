@@ -66,6 +66,7 @@
 		"globalActive": "Active system-wide",
 		"globalUnavailable": "Could not register - another app may be holding this combination",
 		"conflictsWithRecording": "Already used by recording hotkey: {{action}}",
-		"saveFailed": "Could not save shortcuts. Check that Recordly can write its settings, then try again."
+		"saveFailed": "Could not save shortcuts. Check that Recordly can write its settings, then try again.",
+		"globalModifierRequired": "Recording shortcuts need Ctrl/Command or Alt so they do not steal ordinary typing."
 	}
 }

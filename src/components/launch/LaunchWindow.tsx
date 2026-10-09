@@ -65,7 +65,7 @@ export function LaunchWindow() {
 function LaunchWindowContent() {
 	const t = useScopedT("launch");
 	const { openId, requestOpen, requestClose } = useLaunchPopoverCoordinator();
-	const { openConfig: openShortcutsConfig, recordingShortcuts } = useShortcuts();
+	const { openConfig: openShortcutsConfig, isConfigOpen, recordingShortcuts } = useShortcuts();
 	const keyviz = useKeyvizSidecar();
 
 	const {
@@ -159,6 +159,7 @@ function LaunchWindowContent() {
 	// Global shortcut hotkey = bấm nút HUD — state luôn nhất quán (spec Task 4).
 	useEffect(() => {
 		const unsubscribe = window.electronAPI?.onRecordingHotkey?.((action) => {
+			if (isConfigOpen || keyviz.pendingDecision !== null) return;
 			if (action === "start" && !recording && !finalizing) {
 				toggleRecording();
 			} else if (action === "stop" && recording) {
@@ -172,7 +173,7 @@ function LaunchWindowContent() {
 			}
 		});
 		return () => unsubscribe?.();
-	}, [recording, paused, finalizing, toggleRecording, pauseRecording, resumeRecording]);
+	}, [isConfigOpen, keyviz.pendingDecision, recording, paused, finalizing, toggleRecording, pauseRecording, resumeRecording]);
 
 	// Chord điều khiển quay bị lọc khỏi overlay trước mỗi lần quay (spec Task 3/4).
 	useEffect(() => {
@@ -206,6 +207,7 @@ function LaunchWindowContent() {
 	const { handleHudMouseEnter, handleHudMouseLeave, beginInteractiveHudAction } =
 		useLaunchHudInteractionState({
 			openId,
+			hudDialogOpen: isConfigOpen || keyviz.pendingDecision !== null,
 			isHudDraggingRef,
 			isWebcamPreviewDraggingRef,
 			webcamPreviewDragStartRef,
@@ -452,7 +454,14 @@ function LaunchWindowContent() {
 				}
 			>
 				<div className="flex min-w-52 flex-col gap-1 p-2">
-					<DropdownItem onClick={() => openShortcutsConfig()} icon={<Keyboard size={16} />}>
+					<DropdownItem
+						onClick={() => {
+							beginInteractiveHudAction();
+						openShortcutsConfig();
+						requestClose("keyviz-config");
+						}}
+						icon={<Keyboard size={16} />}
+					>
 						{t("keyviz.configShortcuts", "Keyboard shortcuts")}
 					</DropdownItem>
 					{keyviz.supported && (

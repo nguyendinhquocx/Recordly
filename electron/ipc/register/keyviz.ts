@@ -48,6 +48,14 @@ export function registerKeyvizSidecarHandlers(): void {
 		}
 	});
 
+	controller.onUnexpectedExit(() => {
+		for (const window of BrowserWindow.getAllWindows()) {
+			if (!window.isDestroyed()) {
+				window.webContents.send("keyviz:unexpected-exit");
+			}
+		}
+	});
+
 	// Nhả sidecar khi app thoát — không để process mồ côi.
 	app.on("before-quit", () => {
 		void controller.dispose();

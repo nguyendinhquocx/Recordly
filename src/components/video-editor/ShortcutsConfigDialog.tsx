@@ -1,6 +1,6 @@
 import { Kbd, Description, Modal } from "@heroui/react";
 import { Keyboard, ArrowCounterClockwise as RotateCcw } from "@/components/ui/icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import {
 	findConflict,
 	findRecordingShortcutConflict,
 	formatBinding,
+	hasGlobalRecordingModifier,
 	SHORTCUT_ACTIONS,
 	SHORTCUT_LABELS,
 	type ShortcutAction,
@@ -59,6 +60,7 @@ export function ShortcutsConfigDialog() {
 		null,
 	);
 	const [registerFailures, setRegisterFailures] = useState<Record<string, boolean>>({});
+	const captureActive = captureFor !== null || captureForRecording !== null;
 	const [conflict, setConflict] = useState<{
 		forAction: ShortcutAction;
 		pending: ShortcutBinding;
@@ -78,7 +80,9 @@ export function ShortcutsConfigDialog() {
 		if (!isConfigOpen) return;
 		setRegisterFailures({});
 		let cancelled = false;
-		void window.electronAPI?.registerGlobalRecordingHotkeys?.().then((results) => {
+		const register = window.electronAPI?.registerGlobalRecordingHotkeys?.();
+		if (!register) return;
+		void register.then((results) => {
 			if (cancelled) return;
 			const statuses: Record<string, boolean> = {};
 			for (const result of results) {
@@ -95,6 +99,28 @@ export function ShortcutsConfigDialog() {
 			cancelled = true;
 		};
 	}, [isConfigOpen]);
+
+	useLayoutEffect(() => {
+		if (!captureActive) return;
+		window.electronAPI?.suspendGlobalRecordingHotkeys?.();
+		return () => {
+			const resume = window.electronAPI?.resumeGlobalRecordingHotkeys;
+			if (!resume) return;
+			void resume()
+				.then((results) => {
+					const statuses: Record<string, boolean> = {};
+					for (const result of results) {
+						statuses[result.action] = !result.registered;
+					}
+					setRegisterFailures(statuses);
+				})
+				.catch(() => {
+					setRegisterFailures(
+						Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
+					);
+				});
+		};
+	}, [captureActive]);
 
 	/** Chord recording có trùng binding cho không (dùng cho editor capture + recording capture). */
 	const findRecordingConflict = useCallback(
@@ -184,6 +210,10 @@ export function ShortcutsConfigDialog() {
 			};
 			const target = captureForRecording;
 			setCaptureForRecording(null);
+			if (!hasGlobalRecordingModifier(binding)) {
+				toast.error(t("shortcutsConfig.globalModifierRequired"));
+				return;
+			}
 
 			// Check every fixed, editor, and recording binding; no editor action is exempt.
 			const crossConflict = findRecordingShortcutConflict(
@@ -303,7 +333,10 @@ export function ShortcutsConfigDialog() {
 				if (!open) handleClose();
 			}}
 		>
-			<DialogContent className="max-w-lg max-h-[85vh] overflow-hidden">
+			<DialogContent
+				data-hud-interactive
+				className="max-w-lg max-h-[85vh] overflow-hidden pointer-events-auto"
+			>
 				<DialogHeader className="shrink-0">
 					<DialogTitle className="flex items-center gap-2 text-base font-semibold">
 						<Keyboard className="w-4 h-4 text-accent" />
@@ -403,7 +436,7 @@ export function ShortcutsConfigDialog() {
 						{RECORDING_SHORTCUT_ACTIONS.map((action) => {
 							const isCapturing = captureForRecording === action;
 							const registerFailed = registerFailures[action] === true;
-							const registerActive = registerFailures[action] === false;
+							const registerActive = !captureActive && registerFailures[action] === false;
 							return (
 								<div key={action}>
 									<div className="flex items-center justify-between gap-4 border-b border-separator py-3">
@@ -495,7 +528,7 @@ export function ShortcutsConfigDialog() {
 						<Button variant="ghost" size="sm" onClick={handleClose}>
 							{t("shortcutsConfig.cancel")}
 						</Button>
-						<Button size="sm" onClick={handleSave}>
+						<Button size="sm" onClick={handleSave} disabled={captureActive}>
 							{t("shortcutsConfig.save")}
 						</Button>
 					</div>

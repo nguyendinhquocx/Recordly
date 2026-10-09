@@ -71,6 +71,18 @@ describe("bindingToSidecarChord", () => {
 	it("maps enter alias to Return", () => {
 		expect(bindingToSidecarChord({ key: "enter" })).toEqual<SidecarChord>(["Return"]);
 	});
+
+	it("preserves rdev names for less-common physical keys", () => {
+		expect(bindingToSidecarChord({ key: "insert", ctrl: true })).toEqual<SidecarChord>([
+			"Control",
+			"Insert",
+		]);
+		expect(bindingToSidecarChord({ key: "scrolllock" })).toEqual<SidecarChord>([
+			"ScrollLock",
+		]);
+		expect(bindingToSidecarChord({ key: "=" })).toEqual<SidecarChord>(["Equal"]);
+		expect(bindingToSidecarChord({ key: ";" })).toEqual<SidecarChord>(["SemiColon"]);
+	});
 });
 
 describe("KeyvizSidecarController", () => {
@@ -165,6 +177,27 @@ describe("KeyvizSidecarController", () => {
 		expect(controller.getStatus().state).toBe("idle");
 	});
 
+	it("settles the ready waiter immediately on asynchronous spawn error", async () => {
+		const child = createFakeChild();
+		child.pid = undefined;
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => {
+				queueMicrotask(() => child.emit("error", new Error("ENOENT")));
+				return child as never;
+			},
+		});
+
+		const promise = controller.prepareCapture([]);
+		const assertion = expect(promise).resolves.toMatchObject({
+			ok: false,
+			code: "spawn_failed",
+		});
+		await vi.advanceTimersByTimeAsync(0);
+		await assertion;
+		expect(controller.getStatus().state).toBe("idle");
+	});
+
 	it("times out when sidecar never becomes ready", async () => {
 		const child = createFakeChild();
 		const controller = new KeyvizSidecarController({
@@ -235,6 +268,44 @@ describe("KeyvizSidecarController", () => {
 			code: "capture_failed",
 			message: "late failure",
 		});
+	});
+
+	it("notifies an unexpected runtime failure after capture preparation resolved", async () => {
+		const child = createFakeChild();
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => child as never,
+		});
+		const onUnexpectedExit = vi.fn();
+		controller.onUnexpectedExit(onUnexpectedExit);
+
+		const prepare = controller.prepareCapture([]);
+		await vi.advanceTimersByTimeAsync(0);
+		child.stdout.emit("data", '{"type":"ready"}\n{"type":"capture_started"}\n');
+		await expect(prepare).resolves.toEqual({ ok: true });
+
+		child.stdout.emit(
+			"data",
+			'{"type":"capture_failed","code":"hook_install_failed","message":"listener died"}\n',
+		);
+		expect(controller.getStatus().state).toBe("failed");
+		expect(onUnexpectedExit).toHaveBeenCalledTimes(1);
+	});
+
+	it("settles an in-flight ready waiter when release stops the handshake", async () => {
+		const child = createFakeChild();
+		const controller = new KeyvizSidecarController({
+			resolveBinary: resolveBinaryFound,
+			spawnFn: () => child as never,
+		});
+
+		const prepare = controller.prepareCapture([]);
+		await vi.advanceTimersByTimeAsync(0);
+		const release = controller.stop("test-abort");
+		await vi.advanceTimersByTimeAsync(0);
+		expect(emittedLines(child).some((line) => line.type === "quit")).toBe(true);
+		child.emit("exit", 0);
+		await Promise.all([release, expect(prepare).resolves.toMatchObject({ ok: false, code: "cancelled" })]);
 	});
 
 	it("rejects capture when standalone Keyviz is already running", async () => {
@@ -350,21 +421,28 @@ describe("KeyvizSidecarController", () => {
 	});
 
 	it("openSettings spawns settings-mode process", async () => {
-		const captureChild = createFakeChild();
 		const settingsChild = createFakeChild();
-		const spawned: FakeChild[] = [];
+		const spawnedArgs: string[][] = [];
 		const controller = new KeyvizSidecarController({
 			resolveBinary: resolveBinaryFound,
-			spawnFn: () => {
-				const next = spawned.length === 0 ? captureChild : settingsChild;
-				spawned.push(next);
-				return next as never;
+			spawnFn: (_command, args) => {
+				spawnedArgs.push(args);
+				return settingsChild as never;
 			},
 		});
 
-		const result = await controller.openSettings();
+		const opening = controller.openSettings();
+		let resolved = false;
+		void opening.then(() => {
+			resolved = true;
+		});
+		await vi.advanceTimersByTimeAsync(0);
+		expect(resolved).toBe(false);
+		settingsChild.stdout.emit("data", '{"type":"ready"}\n');
+		const result = await opening;
+
 		expect(result).toEqual({ success: true });
-		expect(spawned).toHaveLength(1);
+		expect(spawnedArgs).toEqual([["--mode=settings"]]);
 		expect(controller.getStatus().state).toBe("idle");
 	});
 

@@ -380,6 +380,8 @@ export interface KeyvizSidecarRecorderControl {
 }
 
 export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScreenRecorderReturn {
+	const keyvizRef = useRef(keyviz);
+	keyvizRef.current = keyviz;
 	const [recording, setRecording] = useState(false);
 	const [paused, setPaused] = useState(false);
 	const [starting, setStarting] = useState(false);
@@ -1593,6 +1595,7 @@ export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScr
 			(state) => {
 				void (async () => {
 					recordingStartGeneration.current += 1;
+					await keyvizRef.current?.release();
 					setRecording(false);
 					nativeScreenRecording.current = false;
 					nativeWindowsRecording.current = false;
@@ -1826,9 +1829,9 @@ export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScr
 						const keyvizOutcome = await prepareKeyviz();
 						if (keyvizOutcome.mode === "cancelled" || startWasCancelled()) {
 							await discardActiveNativeCapture();
-						cleanupCapturedMedia();
-						await stopWebcamRecorder();
-						return;
+							cleanupCapturedMedia();
+							await stopWebcamRecorder();
+							return;
 						}
 
 						const resumeResult = await window.electronAPI.resumeNativeScreenRecording();

@@ -174,6 +174,34 @@ export function bindingToSidecarChord(binding: {
 		end: "End",
 		pageup: "PageUp",
 		pagedown: "PageDown",
+		insert: "Insert",
+		printscreen: "PrintScreen",
+		scrolllock: "ScrollLock",
+		pause: "Pause",
+		numlock: "NumLock",
+		capslock: "CapsLock",
+		minus: "Minus",
+		"-": "Minus",
+		equal: "Equal",
+		"=": "Equal",
+		comma: "Comma",
+		",": "Comma",
+		period: "Dot",
+		".": "Dot",
+		slash: "Slash",
+		"/": "Slash",
+		semicolon: "SemiColon",
+		";": "SemiColon",
+		quote: "Quote",
+		"'": "Quote",
+		backquote: "BackQuote",
+		"`": "BackQuote",
+		leftbracket: "LeftBracket",
+		"[": "LeftBracket",
+		rightbracket: "RightBracket",
+		"]": "RightBracket",
+		backslash: "BackSlash",
+		"\\": "BackSlash",
 		arrowup: "UpArrow",
 		arrowdown: "DownArrow",
 		arrowleft: "LeftArrow",
@@ -213,6 +241,7 @@ interface PendingWait {
 export class KeyvizSidecarController {
 	private process: ChildProcessWithoutNullStreams | null = null;
 	private settingsProcess: ChildProcessWithoutNullStreams | null = null;
+	private settingsReadyPromise: Promise<{ success: boolean; error?: string }> | null = null;
 	private state: KeyvizSidecarState = "idle";
 	private stdoutBuffer = "";
 	private pendingWait: PendingWait | null = null;
@@ -309,6 +338,7 @@ export class KeyvizSidecarController {
 
 		child.on("error", (error) => {
 			console.error("[keyviz-sidecar] process error:", error);
+			this.handleProcessError(child, error);
 		});
 		child.stdout.setEncoding("utf8");
 		child.stdout.on("data", (chunk: string) => {
@@ -439,46 +469,127 @@ export class KeyvizSidecarController {
 			return { success: false, error: "binary_missing" };
 		}
 
-		// Chỉ cho phép 1 cửa sổ settings.
+		// Reuse the in-flight ready handshake or the already-open native Settings window.
 		if (this.settingsProcess && this.settingsProcess.exitCode === null) {
-			return { success: true };
+			return this.settingsReadyPromise ?? { success: true };
 		}
 
 		const spawnFn = this.options.spawnFn ?? defaultSpawn;
+		let child: ChildProcessWithoutNullStreams | null = null;
 		try {
-			const child = spawnFn(binaryPath, ["--mode=settings"]);
-			await new Promise<void>((resolve, reject) => {
-				if (child.pid !== undefined) {
-					resolve();
-					return;
-				}
-				const onSpawn = () => {
-					cleanup();
-					resolve();
-				};
-				const onError = (error: Error) => {
-					cleanup();
-					reject(error);
-				};
-				const cleanup = () => {
-					child.removeListener("spawn", onSpawn);
-					child.removeListener("error", onError);
-				};
-				child.once("spawn", onSpawn);
-				child.once("error", onError);
-			});
+			child = spawnFn(binaryPath, ["--mode=settings"]);
+			this.settingsProcess = child;
 			child.on("error", (error) => {
 				console.error("[keyviz-sidecar:settings] process error:", error);
 			});
-			// Drain để pipe không đầy (sidecar settings chỉ in 1 dòng ready).
-			child.stdout.resume();
 			child.stderr?.resume();
-			this.settingsProcess = child;
-			return { success: true };
+
+			const opening = (async () => {
+				await new Promise<void>((resolve, reject) => {
+					if (child?.pid !== undefined) {
+						resolve();
+						return;
+					}
+					const onSpawn = () => {
+						cleanup();
+						resolve();
+					};
+					const onError = (error: Error) => {
+						cleanup();
+						reject(error);
+					};
+					const cleanup = () => {
+						child?.removeListener("spawn", onSpawn);
+						child?.removeListener("error", onError);
+					};
+					child?.once("spawn", onSpawn);
+					child?.once("error", onError);
+				});
+
+				const ready = await this.waitForSettingsReady(child as ChildProcessWithoutNullStreams);
+				return ready.ok ? { success: true } : { success: false, error: ready.code };
+			})();
+			this.settingsReadyPromise = opening;
+			const result = await opening;
+			this.settingsReadyPromise = null;
+			if (!result.success) {
+				child.stdin.end();
+				if (this.settingsProcess === child) this.settingsProcess = null;
+			}
+			return result;
 		} catch (error) {
-			console.error("[keyviz-sidecar:settings] failed to spawn:", error);
+			console.error("[keyviz-sidecar:settings] failed to open:", error);
+			this.settingsReadyPromise = null;
+			if (child) {
+				child.stdin.end();
+				if (this.settingsProcess === child) this.settingsProcess = null;
+			}
 			return { success: false, error: "spawn_failed" };
 		}
+	}
+
+	private waitForSettingsReady(
+		child: ChildProcessWithoutNullStreams,
+	): Promise<WaitForLineResult> {
+		child.stdout.setEncoding("utf8");
+		return new Promise((resolve) => {
+			let buffer = "";
+			let settled = false;
+			const finish = (result: WaitForLineResult) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timer);
+				child.stdout.removeListener("data", onData);
+				child.removeListener("exit", onExit);
+				child.removeListener("error", onError);
+				resolve(result);
+			};
+			const onData = (chunk: string) => {
+				buffer += chunk;
+				let newlineIndex = buffer.indexOf("\n");
+				while (newlineIndex !== -1) {
+					const line = buffer.slice(0, newlineIndex).trim();
+					buffer = buffer.slice(newlineIndex + 1);
+					newlineIndex = buffer.indexOf("\n");
+					if (!line) continue;
+					try {
+						const parsed = JSON.parse(line) as SidecarLine;
+						if (parsed.type === "ready") {
+							finish({ ok: true, line: parsed });
+						return;
+						}
+						if (parsed.type === "capture_failed") {
+							finish({
+								ok: false,
+							code: "capture_failed",
+							message:
+								typeof parsed.message === "string"
+									? parsed.message
+									: "settings sidecar failed before ready",
+							});
+							return;
+						}
+					} catch {
+						// Ignore non-JSON diagnostic output; only a ready message opens Settings.
+					}
+				}
+			};
+			const onExit = () =>
+				finish({
+					ok: false,
+					code: "process_exited",
+					message: "settings sidecar exited before ready",
+				});
+			const onError = (error: Error) =>
+				finish({ ok: false, code: "spawn_failed", message: error.message });
+			const timer = setTimeout(
+				() => finish({ ok: false, code: "timeout", message: "settings ready timeout" }),
+				READY_TIMEOUT_MS,
+			);
+			child.stdout.on("data", onData);
+			child.once("exit", onExit);
+			child.once("error", onError);
+		});
 	}
 
 	/** Dọn process khi app quit. */
@@ -642,6 +753,20 @@ export class KeyvizSidecarController {
 			} catch {
 				/* ignore */
 			}
+		}
+	}
+
+	private handleProcessError(child: ChildProcessWithoutNullStreams, error: Error): void {
+		if (this.process !== child) {
+			return;
+		}
+		const wasCapturing = this.state === "capturing";
+		this.process = null;
+		this.clearPendingWait("spawn_failed", error.message || "sidecar process failed");
+		this.resolveQuitWaiters();
+		this.setState("failed");
+		if (wasCapturing) {
+			this.notifyUnexpectedExit();
 		}
 	}
 

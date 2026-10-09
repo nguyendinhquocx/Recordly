@@ -20,9 +20,14 @@ use app::window::config_window;
 pub fn run() {
     let cli = parse_cli();
     let sidecar_settings_mode = cli.mode == RunMode::Settings;
+    let mut builder = tauri::Builder::default();
+    if cli.mode == RunMode::Standalone {
+        // Capture and Settings are separate Recordly-owned sidecars; they must
+        // coexist even though both use the dedicated sidecar app identity.
+        builder = builder.plugin(tauri_plugin_single_instance::init(|_, __, ___| {}));
+    }
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|_, __, ___| {}))
+    builder
         .plugin(tauri_plugin_prevent_default::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())

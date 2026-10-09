@@ -271,6 +271,8 @@ function verifyKeyvizSidecar(unpackedRoot) {
 	const resourcesDir = path.dirname(unpackedRoot);
 	const sidecarPath = path.join(resourcesDir, "keyviz", "recordly-keyviz.exe");
 	assertFile(sidecarPath, "Keyviz sidecar executable");
+	assertFile(path.join(resourcesDir, "keyviz", "LICENSE"), "Keyviz GPLv3 license");
+	assertFile(path.join(resourcesDir, "THIRD_PARTY_NOTICES.md"), "third-party notices");
 
 	const sizeBytes = statSync(sidecarPath).size;
 	if (sizeBytes < 1024 * 1024) {

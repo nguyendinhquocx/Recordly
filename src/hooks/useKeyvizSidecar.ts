@@ -60,6 +60,7 @@ export function useKeyvizSidecar() {
 	const [pendingDecision, setPendingDecision] = useState<PendingDecision | null>(null);
 	const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 	const stateRef = useRef<KeyvizSidecarUiState>("idle");
+	const lastPushedStateRef = useRef<KeyvizSidecarUiState>("idle");
 	const releaseRequestedRef = useRef(false);
 	stateRef.current = uiState;
 
@@ -84,9 +85,11 @@ export function useKeyvizSidecar() {
 	useEffect(() => {
 		const unsubscribe = window.electronAPI?.onKeyvizStateChanged?.((status) => {
 			const payload = status as KeyvizStatusPayload;
+			const previousState = lastPushedStateRef.current;
+			lastPushedStateRef.current = payload.state;
 			if (
 				shouldReportUnexpectedKeyvizExit(
-					stateRef.current,
+					previousState,
 					payload.state,
 					releaseRequestedRef.current,
 				)
@@ -95,7 +98,15 @@ export function useKeyvizSidecar() {
 			}
 			setUiState(payload.state);
 		});
-		return () => unsubscribe?.();
+		const unsubscribeUnexpectedExit = window.electronAPI?.onKeyvizUnexpectedExit?.(() => {
+			if (!releaseRequestedRef.current) {
+				setUnexpectedExit(true);
+			}
+		});
+		return () => {
+			unsubscribe?.();
+			unsubscribeUnexpectedExit?.();
+		};
 	}, []);
 
 	// Phát hiện sidecar rớt giữa recording: state capturing nhưng process đã exited.
@@ -111,11 +122,13 @@ export function useKeyvizSidecar() {
 			void window.electronAPI?.keyvizGetStatus?.().then((status) => {
 				const payload = status as KeyvizStatusPayload;
 				if (releaseRequestedRef.current) return;
+				const previousState = lastPushedStateRef.current;
+				lastPushedStateRef.current = payload.state;
 				if (payload.state === "exited" || payload.state === "failed") {
 					setUiState(payload.state);
 					if (
 						shouldReportUnexpectedKeyvizExit(
-							stateRef.current,
+							previousState,
 							payload.state,
 							releaseRequestedRef.current,
 						)

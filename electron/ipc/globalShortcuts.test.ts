@@ -28,6 +28,8 @@ vi.mock("../windows", () => ({
 import {
 	bindingToAccelerator,
 	registerGlobalRecordingShortcuts,
+	resumeGlobalRecordingShortcuts,
+	suspendGlobalRecordingShortcuts,
 	unregisterAllGlobalRecordingShortcuts,
 } from "./globalShortcuts";
 
@@ -42,9 +44,15 @@ describe("bindingToAccelerator", () => {
 		);
 	});
 
-	it("maps space and function keys", () => {
-		expect(bindingToAccelerator({ key: " " })).toBe("Space");
-		expect(bindingToAccelerator({ key: "F10", shift: true })).toBe("Shift+F10");
+	it("requires a safe modifier and maps space/function keys", () => {
+		expect(bindingToAccelerator({ key: " " })).toBeNull();
+		expect(bindingToAccelerator({ key: "q" })).toBeNull();
+		expect(bindingToAccelerator({ key: " ", ctrl: true })).toBe(
+			"CommandOrControl+Space",
+		);
+		expect(bindingToAccelerator({ key: "F10", ctrl: true, shift: true })).toBe(
+			"CommandOrControl+Shift+F10",
+		);
 	});
 
 	it("returns null for unsupported keys", () => {
@@ -129,6 +137,24 @@ describe("registerGlobalRecordingShortcuts", () => {
 			"CommandOrControl+Alt+Shift+T",
 			expect.any(Function),
 		);
+	});
+
+	it("suspends tracked accelerators during chord capture and restores them after", async () => {
+		mockShortcutsFile({});
+		await registerGlobalRecordingShortcuts();
+		const registeredCallsBeforeSuspend = globalShortcutMock.register.mock.calls.length;
+		globalShortcutMock.isRegistered.mockReturnValue(true);
+
+		suspendGlobalRecordingShortcuts();
+		const suspendedResults = await registerGlobalRecordingShortcuts();
+		expect(globalShortcutMock.unregister).toHaveBeenCalledTimes(3);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(registeredCallsBeforeSuspend);
+		expect(suspendedResults).toHaveLength(3);
+
+		const resumedResults = await resumeGlobalRecordingShortcuts();
+		expect(resumedResults.map((result) => result.registered)).toEqual([true, true, true]);
+		expect(globalShortcutMock.register).toHaveBeenCalledTimes(registeredCallsBeforeSuspend + 3);
+		expect(globalShortcutMock.unregisterAll).not.toHaveBeenCalled();
 	});
 
 	it("registers default hotkeys when no shortcuts file exists", async () => {

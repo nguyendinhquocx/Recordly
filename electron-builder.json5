@@ -123,6 +123,14 @@
       {
         "from": "keyviz/src-tauri/target/release/sidecar/recordly-keyviz.exe",
         "to": "keyviz/recordly-keyviz.exe"
+      },
+      {
+        "from": "keyviz/LICENSE",
+        "to": "keyviz/LICENSE"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
       }
     ]
   },

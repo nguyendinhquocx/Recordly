@@ -4,7 +4,17 @@ import {
 	DEFAULT_SHORTCUTS,
 	findRecordingShortcutConflict,
 	FIXED_SHORTCUTS,
+	hasGlobalRecordingModifier,
 } from "./shortcuts";
+
+describe("hasGlobalRecordingModifier", () => {
+	it("requires Ctrl/Command or Alt, not just Shift", () => {
+		expect(hasGlobalRecordingModifier({ key: "q" })).toBe(false);
+		expect(hasGlobalRecordingModifier({ key: "q", shift: true })).toBe(false);
+		expect(hasGlobalRecordingModifier({ key: "q", ctrl: true })).toBe(true);
+		expect(hasGlobalRecordingModifier({ key: "q", alt: true })).toBe(true);
+	});
+});
 
 describe("findRecordingShortcutConflict", () => {
 	it("checks addZoom instead of excluding an editor action", () => {

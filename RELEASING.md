@@ -97,7 +97,7 @@ If you need to rerun publishing for an existing tag, use the manual dispatch for
 
 ### Windows: Keyviz overlay sidecar
 
-The Windows package bundles the [Keyviz](https://github.com/rahul-sdk/keyviz) keyboard overlay as a sidecar (GPLv3, see `keyviz/LICENSE` and `THIRD_PARTY_NOTICES.md`). Build it before `build:win`:
+The Windows package bundles the [Keyviz](https://github.com/rahul-sdk/keyviz) keyboard overlay as a sidecar, and includes its GPLv3 license at `resources/keyviz/LICENSE` plus `resources/THIRD_PARTY_NOTICES.md`. Build it before `build:win`:
 
 ```bash
 npm run build:keyviz-sidecar

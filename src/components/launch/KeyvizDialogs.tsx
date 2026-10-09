@@ -18,6 +18,7 @@ const ERROR_REASON_KEYS: Record<string, string> = {
 	spawn_failed: "keyviz.errorReasonSpawnFailed",
 	timeout: "keyviz.errorReasonTimeout",
 	capture_failed: "keyviz.errorReasonCaptureFailed",
+	listener_stopped: "keyviz.errorReasonCaptureFailed",
 	unsupported_platform: "keyviz.errorReasonUnsupported",
 	process_exited: "keyviz.errorReasonExited",
 };
@@ -31,8 +32,16 @@ export function KeyvizStartupErrorDialog({ keyviz }: { keyviz: KeyvizSidecarCont
 	const decision = keyviz.pendingDecision;
 
 	return (
-		<Dialog open={decision !== null} onOpenChange={() => {}}>
-			<DialogContent className={`launch-theme ${styles.electronNoDrag}`}>
+		<Dialog
+			open={decision !== null}
+			onOpenChange={(open: boolean) => {
+				if (!open) decision?.resolve("cancel");
+			}}
+		>
+			<DialogContent
+				data-hud-interactive
+				className={`launch-theme ${styles.electronNoDrag} pointer-events-auto`}
+			>
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<WarningCircleIcon className="size-5 text-warning" />
@@ -42,7 +51,7 @@ export function KeyvizStartupErrorDialog({ keyviz }: { keyviz: KeyvizSidecarCont
 				<p className="text-sm text-foreground/80">
 					{t(
 						"keyviz.errorMessage",
-						"The keyboard overlay (Keyviz) could not start. Recording is paused until you choose.",
+						"The keyboard overlay (Keyviz) could not start. Choose how to continue before recording.",
 					)}
 					{decision ? (
 						<span className="mt-2 block text-xs text-foreground/50">

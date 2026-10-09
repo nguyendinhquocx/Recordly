@@ -75,6 +75,9 @@ export function bindingToAccelerator(binding: ShortcutBindingLike): string | nul
 	if (!binding || typeof binding.key !== "string" || binding.key.length === 0) {
 		return null;
 	}
+	if (!binding.ctrl && !binding.alt) {
+		return null;
+	}
 	const parts: string[] = [];
 	if (binding.ctrl) parts.push("CommandOrControl");
 	if (binding.alt) parts.push("Alt");
@@ -127,6 +130,21 @@ export async function readGlobalShortcutsSnapshot(): Promise<GlobalShortcutsSnap
 }
 
 let registeredAccelerators = new Map<RecordingHotkeyAction, string>();
+let suspensionDepth = 0;
+let lastRegistrationResults: GlobalShortcutRegistration[] = [];
+
+function unregisterRegisteredAccelerators(): void {
+	for (const [, oldAccelerator] of registeredAccelerators) {
+		try {
+			if (globalShortcut.isRegistered(oldAccelerator)) {
+				globalShortcut.unregister(oldAccelerator);
+			}
+		} catch {
+			/* ignore */
+		}
+	}
+	registeredAccelerators = new Map();
+}
 
 function dispatchToHud(action: RecordingHotkeyAction): void {
 	const hud = getHudOverlayWindow();
@@ -140,20 +158,15 @@ function dispatchToHud(action: RecordingHotkeyAction): void {
 }
 
 export async function registerGlobalRecordingShortcuts(): Promise<GlobalShortcutRegistration[]> {
-	// Gỡ đăng ký cũ trước khi đăng ký lại theo config mới.
-	// Gỡ đăng ký cũ trước khi đăng ký lại theo config mới.
-	for (const [, oldAccelerator] of registeredAccelerators) {
-		try {
-			if (globalShortcut.isRegistered(oldAccelerator)) {
-				globalShortcut.unregister(oldAccelerator);
-			}
-		} catch {
-			/* ignore */
-		}
+	if (suspensionDepth > 0) {
+		return lastRegistrationResults;
 	}
-	registeredAccelerators = new Map();
+	unregisterRegisteredAccelerators();
 
 	const snapshot = await readGlobalShortcutsSnapshot();
+	if (suspensionDepth > 0) {
+		return lastRegistrationResults;
+	}
 	const results: GlobalShortcutRegistration[] = [];
 
 	for (const action of RECORDING_ACTIONS) {
@@ -196,16 +209,37 @@ export async function registerGlobalRecordingShortcuts(): Promise<GlobalShortcut
 		});
 	}
 
+	lastRegistrationResults = results;
 	return results;
 }
 
-/** Gỡ toàn bộ global hotkey (app quit). */
+/** Temporarily release hotkeys so capture-mode dialogs can receive the chords. */
+export function suspendGlobalRecordingShortcuts(): void {
+	suspensionDepth += 1;
+	if (suspensionDepth === 1) {
+		unregisterRegisteredAccelerators();
+	}
+}
+
+/** Re-register after the final chord-capture surface closes. */
+export async function resumeGlobalRecordingShortcuts(): Promise<GlobalShortcutRegistration[]> {
+	suspensionDepth = Math.max(0, suspensionDepth - 1);
+	return suspensionDepth === 0 ? registerGlobalRecordingShortcuts() : lastRegistrationResults;
+}
+
+/** Gỡ các accelerator do module này đăng ký khi app quit; không đụng module khác. */
 export function unregisterAllGlobalRecordingShortcuts(): void {
-	globalShortcut.unregisterAll();
-	registeredAccelerators = new Map();
+	suspensionDepth = 0;
+	unregisterRegisteredAccelerators();
+	lastRegistrationResults = [];
 }
 
 export function registerGlobalShortcutIpcHandlers(): void {
 	ipcMain.handle("global-shortcuts:register", async () => registerGlobalRecordingShortcuts());
+	ipcMain.on("global-shortcuts:suspend", (event) => {
+		suspendGlobalRecordingShortcuts();
+		event.returnValue = true;
+	});
+	ipcMain.handle("global-shortcuts:resume", async () => resumeGlobalRecordingShortcuts());
 	ipcMain.handle("global-shortcuts:read", async () => readGlobalShortcutsSnapshot());
 }

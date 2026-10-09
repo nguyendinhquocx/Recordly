@@ -1035,11 +1035,22 @@ interface Window {
 				binaryFound: boolean;
 			}) => void,
 		) => () => void;
+		onKeyvizUnexpectedExit: (callback: () => void) => () => void;
 		getGlobalShortcutsSnapshot: () => Promise<{
 			editor: Record<string, unknown>;
 			recording: Record<string, unknown>;
 		}>;
 		registerGlobalRecordingHotkeys: () => Promise<
+			Array<{
+				action: string;
+				binding: unknown;
+				accelerator: string | null;
+				registered: boolean;
+				code?: string;
+			}>
+		>;
+		suspendGlobalRecordingHotkeys: () => boolean;
+		resumeGlobalRecordingHotkeys: () => Promise<
 			Array<{
 				action: string;
 				binding: unknown;
