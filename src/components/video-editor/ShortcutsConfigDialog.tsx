@@ -1,6 +1,6 @@
 import { Kbd, Description, Modal } from "@heroui/react";
 import { Keyboard, ArrowCounterClockwise as RotateCcw } from "@/components/ui/icons";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +63,7 @@ export function ShortcutsConfigDialog() {
 	const [registerFailures, setRegisterFailures] = useState<Record<string, boolean>>({});
 	const [registerInvalid, setRegisterInvalid] = useState<Record<string, boolean>>({});
 	const captureActive = captureFor !== null || captureForRecording !== null;
+	const wasConfigOpenRef = useRef(false);
 	const [conflict, setConflict] = useState<{
 		forAction: ShortcutAction;
 		pending: ShortcutBinding;
@@ -70,7 +71,12 @@ export function ShortcutsConfigDialog() {
 	} | null>(null);
 
 	useEffect(() => {
-		if (!isConfigOpen) return;
+		if (!isConfigOpen) {
+			wasConfigOpenRef.current = false;
+			return;
+		}
+		if (wasConfigOpenRef.current) return;
+		wasConfigOpenRef.current = true;
 		setDraft(shortcuts);
 		setRecordingDraft(recordingShortcuts);
 		setCaptureFor(null);

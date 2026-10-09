@@ -70,3 +70,9 @@ implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 the GNU General Public License for more details. A copy of the license is
 available at <https://www.gnu.org/licenses/gpl-3.0.html> and shipped in
 [keyviz/LICENSE](keyviz/LICENSE).
+
+## rdev (MIT)
+
+Keyviz's Windows input listener includes the vendored `rdev` crate at `keyviz/src-tauri/crates/rdev/`, based on [Narsil/rdev](https://github.com/Narsil/rdev).
+
+Copyright (c) 2020 Nicolas Patry. Licensed under the MIT License. The full MIT license text is shipped in the Windows package at `resources/keyviz/rdev-LICENSE` and is available in the source tree at `keyviz/src-tauri/crates/rdev/LICENSE`.

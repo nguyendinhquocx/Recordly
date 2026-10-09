@@ -129,6 +129,10 @@
         "to": "keyviz/LICENSE"
       },
       {
+        "from": "keyviz/src-tauri/crates/rdev/LICENSE",
+        "to": "keyviz/rdev-LICENSE"
+      },
+      {
         "from": "THIRD_PARTY_NOTICES.md",
         "to": "THIRD_PARTY_NOTICES.md"
       }

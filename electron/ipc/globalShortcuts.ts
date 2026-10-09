@@ -126,9 +126,17 @@ export async function readGlobalShortcutsSnapshot(): Promise<GlobalShortcutsSnap
 				: {};
 		const savedRecording =
 			parsed.recording && typeof parsed.recording === "object"
-				? (parsed.recording as Partial<Record<RecordingHotkeyAction, ShortcutBindingLike>>)
+				? (parsed.recording as Partial<
+						Record<RecordingHotkeyAction, ShortcutBindingLike | null>
+				  >)
 				: {};
-		const recording = { ...DEFAULT_RECORDING_SHORTCUTS, ...savedRecording };
+		const recording = { ...DEFAULT_RECORDING_SHORTCUTS };
+		for (const action of RECORDING_ACTIONS) {
+			const binding = savedRecording[action];
+			if (binding && typeof binding.key === "string" && binding.key.length > 0) {
+				recording[action] = binding;
+			}
+		}
 		return { editor, recording };
 	} catch {
 		return { recording: DEFAULT_RECORDING_SHORTCUTS, editor: {} };

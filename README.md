@@ -245,7 +245,7 @@ On Windows, Recordly can display a live keyboard/mouse overlay (Keyviz) in your 
 - Configure shortcuts — including global recording hotkeys (start / stop / pause-resume, default `Ctrl+Alt+Shift+R` / `S` / `P`) — under "Keyboard shortcuts" on the HUD before recording. Hotkeys work while Recordly runs, even when it is not focused, and the control chords are filtered out of the overlay.
 - The overlay process only runs while a recording is actually capturing; it is stopped on pause, stop, cancel, and app exit, and it exits on its own if Recordly dies.
 
-Windows-only for now. The overlay executable, Keyviz GPLv3 license, and third-party notices are bundled with the Windows installer; no separate Keyviz installation is needed. If the standalone Keyviz app is already running, Recordly asks you to close it before starting its overlay and never kills or overwrites that app.
+Windows-only for now. The overlay executable, Keyviz GPLv3 and rdev MIT license texts, and third-party notices are bundled with the Windows installer; no separate Keyviz installation is needed. If the standalone Keyviz app is already running, Recordly asks you to close it before starting its overlay and never kills or overwrites that app.
 
 ---
 

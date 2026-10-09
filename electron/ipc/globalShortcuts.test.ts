@@ -82,6 +82,19 @@ describe("registerGlobalRecordingShortcuts", () => {
 		expect(globalShortcutMock.register).toHaveBeenCalledTimes(3);
 	});
 
+	it("falls back to defaults for null bindings in malformed config", async () => {
+		mockShortcutsFile({
+			recording: { start: null, stop: null, "pause-resume": null },
+		});
+		const results = await registerGlobalRecordingShortcuts();
+
+		expect(results.map((result) => result.registered)).toEqual([true, true, true]);
+		expect(globalShortcutMock.register).toHaveBeenCalledWith(
+			"CommandOrControl+Alt+Shift+R",
+			expect.any(Function),
+		);
+	});
+
 	it("registers configured hotkeys with correct accelerators", async () => {
 		mockShortcutsFile({
 			editor: { playPause: { key: " " } },
