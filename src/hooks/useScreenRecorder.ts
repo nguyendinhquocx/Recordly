@@ -2281,6 +2281,7 @@ export function useScreenRecorder(keyviz?: KeyvizSidecarRecorderControl): UseScr
 			};
 			recorder.onerror = () => {
 				setRecording(false);
+				void keyvizRef.current?.release();
 			};
 			if (startWasCancelled()) {
 				cleanupCapturedMedia();

@@ -3,9 +3,20 @@ import {
 	DEFAULT_RECORDING_SHORTCUTS,
 	DEFAULT_SHORTCUTS,
 	findRecordingShortcutConflict,
+	isSupportedGlobalShortcutKey,
 	FIXED_SHORTCUTS,
 	hasGlobalRecordingModifier,
 } from "./shortcuts";
+
+describe("isSupportedGlobalShortcutKey", () => {
+	it("accepts keys main-process accelerators can represent and rejects the rest", () => {
+		expect(isSupportedGlobalShortcutKey("r")).toBe(true);
+		expect(isSupportedGlobalShortcutKey("F24")).toBe(true);
+		expect(isSupportedGlobalShortcutKey("space")).toBe(true);
+		expect(isSupportedGlobalShortcutKey("insert")).toBe(false);
+		expect(isSupportedGlobalShortcutKey("+")).toBe(false);
+	});
+});
 
 describe("hasGlobalRecordingModifier", () => {
 	it("requires Ctrl/Command or Alt, not just Shift", () => {

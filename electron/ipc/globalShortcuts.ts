@@ -1,7 +1,10 @@
 import { ipcMain, globalShortcut } from "electron";
 import fs from "node:fs/promises";
 import { getHudOverlayWindow } from "../windows";
-import { DEFAULT_RECORDING_SHORTCUTS } from "../../src/lib/shortcuts";
+import {
+	DEFAULT_RECORDING_SHORTCUTS,
+	isSupportedGlobalShortcutKey,
+} from "../../src/lib/shortcuts";
 import { SHORTCUTS_FILE } from "./constants";
 import { parseJsonWithByteOrderMark } from "./utils";
 
@@ -76,6 +79,9 @@ export function bindingToAccelerator(binding: ShortcutBindingLike): string | nul
 		return null;
 	}
 	if (!binding.ctrl && !binding.alt) {
+		return null;
+	}
+	if (!isSupportedGlobalShortcutKey(binding.key)) {
 		return null;
 	}
 	const parts: string[] = [];

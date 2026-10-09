@@ -19,6 +19,7 @@ import {
 	findRecordingShortcutConflict,
 	formatBinding,
 	hasGlobalRecordingModifier,
+	isSupportedGlobalShortcutKey,
 	SHORTCUT_ACTIONS,
 	SHORTCUT_LABELS,
 	type ShortcutAction,
@@ -60,6 +61,7 @@ export function ShortcutsConfigDialog() {
 		null,
 	);
 	const [registerFailures, setRegisterFailures] = useState<Record<string, boolean>>({});
+	const [registerInvalid, setRegisterInvalid] = useState<Record<string, boolean>>({});
 	const captureActive = captureFor !== null || captureForRecording !== null;
 	const [conflict, setConflict] = useState<{
 		forAction: ShortcutAction;
@@ -79,21 +81,26 @@ export function ShortcutsConfigDialog() {
 	useEffect(() => {
 		if (!isConfigOpen) return;
 		setRegisterFailures({});
+		setRegisterInvalid({});
 		let cancelled = false;
 		const register = window.electronAPI?.registerGlobalRecordingHotkeys?.();
 		if (!register) return;
 		void register.then((results) => {
 			if (cancelled) return;
 			const statuses: Record<string, boolean> = {};
+			const invalid: Record<string, boolean> = {};
 			for (const result of results) {
 				statuses[result.action] = !result.registered;
+				invalid[result.action] = result.code === "invalid";
 			}
 			setRegisterFailures(statuses);
+			setRegisterInvalid(invalid);
 		}).catch(() => {
 			if (cancelled) return;
 			setRegisterFailures(
 				Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
 			);
+			setRegisterInvalid({});
 		});
 		return () => {
 			cancelled = true;
@@ -109,15 +116,19 @@ export function ShortcutsConfigDialog() {
 			void resume()
 				.then((results) => {
 					const statuses: Record<string, boolean> = {};
+					const invalid: Record<string, boolean> = {};
 					for (const result of results) {
 						statuses[result.action] = !result.registered;
+						invalid[result.action] = result.code === "invalid";
 					}
 					setRegisterFailures(statuses);
+					setRegisterInvalid(invalid);
 				})
 				.catch(() => {
 					setRegisterFailures(
 						Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
 					);
+					setRegisterInvalid({});
 				});
 		};
 	}, [captureActive]);
@@ -214,6 +225,10 @@ export function ShortcutsConfigDialog() {
 				toast.error(t("shortcutsConfig.globalModifierRequired"));
 				return;
 			}
+			if (!isSupportedGlobalShortcutKey(binding.key)) {
+				toast.error(t("shortcutsConfig.globalInvalid"));
+				return;
+			}
 
 			// Check every fixed, editor, and recording binding; no editor action is exempt.
 			const crossConflict = findRecordingShortcutConflict(
@@ -253,6 +268,11 @@ export function ShortcutsConfigDialog() {
 				delete next[target];
 				return next;
 			});
+			setRegisterInvalid((prev) => {
+				const next = { ...prev };
+				delete next[target];
+				return next;
+			});
 		};
 
 		window.addEventListener("keydown", handleCapture, { capture: true });
@@ -285,10 +305,13 @@ export function ShortcutsConfigDialog() {
 			const results = await window.electronAPI?.registerGlobalRecordingHotkeys?.();
 			if (results) {
 				const failures: Record<string, boolean> = {};
+				const invalid: Record<string, boolean> = {};
 				for (const result of results) {
 					failures[result.action] = !result.registered;
+					invalid[result.action] = result.code === "invalid";
 				}
 				setRegisterFailures(failures);
+				setRegisterInvalid(invalid);
 				if (Object.values(failures).some(Boolean)) {
 					toast.warning(t("shortcutsConfig.globalUnavailable"));
 					return;
@@ -298,6 +321,7 @@ export function ShortcutsConfigDialog() {
 			setRegisterFailures(
 				Object.fromEntries(RECORDING_SHORTCUT_ACTIONS.map((action) => [action, true])),
 			);
+			setRegisterInvalid({});
 			toast.warning(t("shortcutsConfig.globalUnavailable"));
 			return;
 		}
@@ -316,6 +340,7 @@ export function ShortcutsConfigDialog() {
 		setCaptureForRecording(null);
 		setConflict(null);
 		setRegisterFailures({});
+		setRegisterInvalid({});
 		toast.info(t("shortcutsConfig.resetNotice"));
 	}, [t]);
 
@@ -481,7 +506,9 @@ export function ShortcutsConfigDialog() {
 									</div>
 									{registerFailed ? (
 										<p className="px-1 py-1 mb-0.5 text-xs text-warning">
-											{t("shortcutsConfig.globalUnavailable")}
+											{registerInvalid[action]
+								? t("shortcutsConfig.globalInvalid")
+								: t("shortcutsConfig.globalUnavailable")}
 										</p>
 									) : registerActive ? (
 										<p className="px-1 py-1 mb-0.5 text-xs text-muted">

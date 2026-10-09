@@ -127,7 +127,7 @@ export function registerSettingsHandlers() {
 					window.webContents.send("shortcuts:changed", shortcuts);
 				}
 			}
-			// The shortcut dialog explicitly re-registers after this atomic save so it can
+			// The shortcut dialog explicitly re-registers after saving both groups so it can
 			// show per-binding success/failure instead of silently dropping the result.
 			return { success: true };
 		} catch (error) {

@@ -19,6 +19,42 @@ export interface ShortcutBinding {
 
 export type ShortcutsConfig = Record<ShortcutAction, ShortcutBinding>;
 
+const SUPPORTED_GLOBAL_SHORTCUT_KEYS = new Set([
+	" ",
+	"space",
+	"enter",
+	"return",
+	"tab",
+	"escape",
+	"esc",
+	"backspace",
+	"delete",
+	"del",
+	"home",
+	"end",
+	"pageup",
+	"pagedown",
+	"arrowup",
+	"arrowdown",
+	"arrowleft",
+	"arrowright",
+	"up",
+	"down",
+	"left",
+	"right",
+	"plus",
+	"minus",
+]);
+
+export function isSupportedGlobalShortcutKey(key: string): boolean {
+	const normalized = key.toLowerCase();
+	return (
+		SUPPORTED_GLOBAL_SHORTCUT_KEYS.has(normalized) ||
+		/^[a-z0-9]$/.test(normalized) ||
+		/^f([1-9]|1\d|2[0-4])$/.test(normalized)
+	);
+}
+
 export interface RecordingShortcutsConfig {
 	start: ShortcutBinding;
 	stop: ShortcutBinding;

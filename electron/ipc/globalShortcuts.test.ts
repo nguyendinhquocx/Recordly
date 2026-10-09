@@ -57,7 +57,9 @@ describe("bindingToAccelerator", () => {
 
 	it("returns null for unsupported keys", () => {
 		expect(bindingToAccelerator({ key: "" })).toBeNull();
-		expect(bindingToAccelerator({ key: "some weird key" })).toBeNull();
+		expect(bindingToAccelerator({ key: "some weird key", ctrl: true })).toBeNull();
+		expect(bindingToAccelerator({ key: "insert", ctrl: true })).toBeNull();
+		expect(bindingToAccelerator({ key: "+", ctrl: true })).toBeNull();
 	});
 });
 
